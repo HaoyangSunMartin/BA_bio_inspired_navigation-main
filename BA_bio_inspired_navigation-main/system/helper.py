@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 #this function computes the relative angle between 2 vectors
 def compute_angle(vec_1, vec_2):
     length_vector_1 = np.linalg.norm(vec_1)
@@ -58,3 +59,10 @@ def compute_axis_limits(arena_size, xy_coordinates=None, environment=None):
         limits_t[3] = limits_t[3] + diff
 
     return limits_t
+
+### changes by Haoyang Sun- Start
+global timer4LinearLookAhead
+timer4LinearLookAhead = 0.0
+### changes by Haoyang Sun- End
+
+

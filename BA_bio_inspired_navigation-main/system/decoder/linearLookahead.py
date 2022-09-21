@@ -22,7 +22,10 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
         reward_array = []  # save rewards during lookahead, to create lookahead video
         goal_found = None
         for i in range(max_nr_steps):
-            plot = True if (plotting and i == 0 and idx % 2 == 0) else False  # for plotting purposes
+            ###plot = True if (plotting and i == 0 and idx % 2 == 0) else False  # for plotting purposes
+            ###changed by Haoyang Sun--Start
+            plot = False
+            ###changed by Haoyang Sun--End
 
             # Compute reward firing
             if goal_pc_idx is None:
@@ -87,8 +90,11 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
         print("Found goal vector", goal_vector, goal_spiking)
 
     filename = "_goal_" + str(len(env.xy_coordinates) - 1)
-    plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename)
 
+    ###plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename)
+    ###changed by Haoyang Sun--Start
+
+    ###changed by Haoyang Sun--End
     return goal_vector
 
 
@@ -98,6 +104,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
 
     dt = gc_network.dt * 40  # checks spiking only every nth step
     speed = 0.5  # lookahead speed, becomes unstable for large speeds
+    #this can be the main reason causing the slow reaction
 
     angles = np.linspace(0, 2 * np.pi, num=env.num_ray_dir, endpoint=False)  # lookahead directions
 
@@ -170,6 +177,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
         print("No goal vector found, trying random ", goal_vector)
 
     filename = "_subgoal_" + str(len(env.xy_coordinates) - 1)
-    plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
-
+    ###plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
+    ###changed by Haoyang Sun--Start
+    ###changed by Haoyang Sun--End
     return goal_vector

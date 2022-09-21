@@ -1,11 +1,16 @@
 from system.decoder.linearLookahead import *
 import numpy as np
+import system.helper as helper
+import time
+
 
 
 
 def compute_navigation_goal_vector(gc_network, pc_network, cognitive_map, nr_steps, env,
                                    model="linear_lookahead", pod=None, spike_detector=None):
     """Computes the goal vector for the agent to travel to"""
+
+
     distance_to_goal = np.linalg.norm(env.goal_vector)  # current length of goal vector
     distance_to_goal_original = np.linalg.norm(env.goal_vector_original)  # length of goal vector at calculation
 
@@ -39,8 +44,13 @@ def find_new_goal_vector(gc_network, pc_network, cognitive_map, env,
         env.goal_vector = pod.compute_goal_vector(gc_network.gc_modules)
     else:
         goal_pc_idx = np.argmax(cognitive_map.reward_cells)  # pick which pc to look for (reduces computational effort)
+
+
+        start = time.time()
         env.goal_vector = perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env,
                                                 goal_pc_idx=goal_pc_idx, video=video, plotting=plot)
+        end = time.time()
+        helper.timer4LinearLookAhead = helper.timer4LinearLookAhead + (end - start)
 
     env.goal_vector_original = env.goal_vector
 
@@ -52,6 +62,11 @@ def pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, env):
     # if env.pod is not None:
     # env.goal_vector = env.pod.compute_sub_goal_vector(gc_network, pc_network, cognitive_map, env, blocked_directions)
     # else:
-
+    start = time.time()
     env.goal_vector = perform_lookahead_directed(gc_network, pc_network, cognitive_map, env)
     env.goal_vector_original = env.goal_vector
+    end = time.time()
+    helper.timer4LinearLookAhead = helper.timer4LinearLookAhead + (end - start)
+
+
+

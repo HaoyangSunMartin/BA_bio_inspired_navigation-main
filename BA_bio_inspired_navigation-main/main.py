@@ -15,11 +15,17 @@ import os
 import matplotlib.animation as animation
 import matplotlib as mpl
 import numpy as np
+import system.helper as helper
+import time
 
+
+### changes by Haoyang Sun- Start
+print(helper.timer4LinearLookAhead)
+### changes by Haoyang Sun- End
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-from_data = True
+from_data = False
 # set time-step size of simulation
 dt = 1e-2  # in seconds, use 1e-2 for sufficient results
 
@@ -59,10 +65,10 @@ if from_data:
     gc_network.set_as_target_state(pc_network.place_cells[idx].gc_connections)
 
 # run simulation
-nr_steps = 8000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+nr_steps = 25000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
 ###changes by HAOYANG SUN-start
-nr_steps_exploration = 0
+nr_steps_exploration = nr_steps
 ###changes by HAOYANG SUN-end
 nr_plots = 5  # allows to plot during the run of a simulation
 nr_trials = 1  # 1 for default, 50 for decoder test, 1 for maze exploration
@@ -112,6 +118,7 @@ def animation_frame(frame):
             compute_navigation_goal_vector(gc_network, pc_network, cognitive_map, i - nr_steps_exploration, env,
                                            pod=pod_network, spike_detector=spike_detector, model=vector_model)
         goal_vector_array.append(env.goal_vector)
+
 
         # compute velocity vector
         env.compute_movement(gc_network, pc_network, cognitive_map, exploration_phase=exploration_phase)
@@ -172,7 +179,23 @@ if video:
     env.end_simulation()
 else:
     # manually call simulation function
+
+    ###changed by Haoyang Sun--Start
+    startTimer = time.time()
+    ###changed by Haoyang Sun--End
+
     animation_frame(nr_steps)
+
+    ###changed by Haoyang Sun--Start
+    endTimer = time.time()
+    totalTimer = (endTimer - startTimer)
+    print("the total running time is:")
+    print(totalTimer)
+    print("linear look ahead takes:")
+    print(helper.timer4LinearLookAhead)
+    print("linear look ahead takes up(%):")
+    print((helper.timer4LinearLookAhead*100/totalTimer))
+    ###changed by Haoyang Sun--End
 
     # Finished simulation
 

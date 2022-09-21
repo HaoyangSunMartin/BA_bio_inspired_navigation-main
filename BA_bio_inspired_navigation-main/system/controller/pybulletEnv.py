@@ -34,7 +34,7 @@ class PybulletEnvironment:
         elif env_model == "linear_sunburst":
             ###Changes by Haoyang Sun - START
             #doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
-            doors_option = "plane_doors"
+            doors_option = "plane"
             ###Changes by Haoyang Sun - END
             p.loadURDF("environment/linear_sunburst_map/" + doors_option + ".urdf")
             base_position = [5.5, 0.55, 0.02]
@@ -166,6 +166,8 @@ class PybulletEnvironment:
         ray_dist = self.ray_detection(angles)  # determine ray values
         changed = self.update_directions(ray_dist)  # check if an direction became unblocked
 
+        #The decision of using which kind of navigation method(topology or vector based)
+        # if all directions are free, use vector based navigation
         if np.all(self.directions) and self.topology_based:
             # Switch back to vector-based navigation if all directions are free
             self.topology_based = False
@@ -173,12 +175,15 @@ class PybulletEnvironment:
                                  model="linear_lookahead", pod=None, spike_detector=None)
 
         minimum_dist = np.min(ray_dist)
+        # if there is an obstacle very close to the robot(less than 0.3m), back off from it(distance 0.5) and then start topology based navigation
         if minimum_dist < 0.3:
-            # Initiate back up maneuver
+            # Initiate back off maneuver
             idx = np.argmin(ray_dist)
             angle = angles[idx] + np.pi
             self.goal_vector = np.array([np.cos(angle), np.sin(angle)]) * 0.5
+            print("obstacle too close, backing off\n")
             self.goal_vector_original = self.goal_vector
+
             self.topology_based = True
 
         if not exploration_phase:
@@ -217,7 +222,7 @@ class PybulletEnvironment:
 
         p.removeAllUserDebugItems()
 
-        ray_len = 2  # max_ray length to check for
+        ray_len = 2  # max_ray length to check for(horizon of the robot)
 
         ray_from = []
         ray_to = []
@@ -234,16 +239,18 @@ class PybulletEnvironment:
             ]))
 
         ray_dist = np.empty_like(angles)
-        results = p.rayTestBatch(ray_from, ray_to, numThreads=0)
+        results = p.rayTestBatch(ray_from, ray_to, numThreads=0) #perform a single ray-cast to find the intersection information of the first object hit
         for idx, result in enumerate(results):
             hit_object_uid = result[0]
 
             dist = ray_len
             if hit_object_uid != -1:
                 hit_position = result[3]
-                dist = np.linalg.norm(hit_position - ray_from_point)
-                ray_dist[idx] = dist
-
+                ###dist =  np.linalg.norm(hit_position - ray_from_point)
+                ###changed by Haoyang Sun- Start
+                dist = result[2]*2
+                ###ray_dist[idx] = dist
+                ###changed by Haoyang Sun- End
             ray_dist[idx] = dist
 
             # if dist < 1:
