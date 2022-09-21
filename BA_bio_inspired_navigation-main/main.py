@@ -1,7 +1,7 @@
 
 from system.controller.pybulletEnv import PybulletEnvironment
 from plotting.plotResults import *
-
+from plotting.plotThesis import *
 from system.bio_model.gridcellModel import GridCellNetwork
 from system.decoder.phaseOffsetDetector import PhaseOffsetDetectorNetwork
 from system.decoder.spikeDetection import SpikeDetector
@@ -25,7 +25,7 @@ print(helper.timer4LinearLookAhead)
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-from_data = False
+from_data = True
 # set time-step size of simulation
 dt = 1e-2  # in seconds, use 1e-2 for sufficient results
 
@@ -64,11 +64,13 @@ if from_data:
     idx = np.argmax(cognitive_map.reward_cells)
     gc_network.set_as_target_state(pc_network.place_cells[idx].gc_connections)
 
+plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map")
+
 # run simulation
-nr_steps = 25000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+nr_steps = 15000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
 ###changes by HAOYANG SUN-start
-nr_steps_exploration = nr_steps
+nr_steps_exploration = 0
 ###changes by HAOYANG SUN-end
 nr_plots = 5  # allows to plot during the run of a simulation
 nr_trials = 1  # 1 for default, 50 for decoder test, 1 for maze exploration
@@ -200,8 +202,8 @@ else:
     # Finished simulation
 
     # Plot last state
-    cognitive_map_plot(pc_network, cognitive_map, environment=env_model)
-
+    ###cognitive_map_plot(pc_network, cognitive_map, environment=env_model)
+    cognitive_map_plot(pc_network, cognitive_map)
     # Save place network and cognitive map to reload it later
     pc_network.save_pc_network()  # provide filename="_navigation" to avoid overwriting the exploration phase
     cognitive_map.save_cognitive_map()  # provide filename="_navigation" to avoid overwriting the exploration phase

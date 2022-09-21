@@ -34,7 +34,7 @@ class PybulletEnvironment:
         elif env_model == "linear_sunburst":
             ###Changes by Haoyang Sun - START
             #doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
-            doors_option = "plane"
+            doors_option = "plane_doors"
             ###Changes by Haoyang Sun - END
             p.loadURDF("environment/linear_sunburst_map/" + doors_option + ".urdf")
             base_position = [5.5, 0.55, 0.02]

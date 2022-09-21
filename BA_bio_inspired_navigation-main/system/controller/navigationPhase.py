@@ -62,11 +62,17 @@ def pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, env):
     # if env.pod is not None:
     # env.goal_vector = env.pod.compute_sub_goal_vector(gc_network, pc_network, cognitive_map, env, blocked_directions)
     # else:
+    ###changes by Haoyang Sun--Start
     start = time.time()
+    ###changes by Haoyang Sun--End
+
     env.goal_vector = perform_lookahead_directed(gc_network, pc_network, cognitive_map, env)
     env.goal_vector_original = env.goal_vector
+
+    ###changes by Haoyang Sun--Start
     end = time.time()
     helper.timer4LinearLookAhead = helper.timer4LinearLookAhead + (end - start)
+    ###changes by Haoyang Sun--End
 
 
 
