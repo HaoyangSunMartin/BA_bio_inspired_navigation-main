@@ -355,6 +355,12 @@ def add_cognitive_map(ax, pc_network, cognitive_map):
                 x_values = [pc.env_coordinates[0], pc_network.place_cells[j].env_coordinates[0]]
                 y_values = [pc.env_coordinates[1], pc_network.place_cells[j].env_coordinates[1]]
                 ax.plot(x_values, y_values, color=TUM_colors['TUMGray'], alpha=0.2)
+        ###changes by Haoyang Sun--Start
+        #annotate the place cells with their IDs
+        x_coord, y_coord = pc.env_coordinates
+        ax.text(x_coord,y_coord, str(i), fontsize=10)
+
+        ###changes by Haoyang Sun--End
 
         circle = plt.Circle((pc.env_coordinates[0], pc.env_coordinates[1]), 0.5,
                             fc=TUM_colors['TUMBlue'], alpha=cognitive_map.reward_cells[i] * 0.6,
