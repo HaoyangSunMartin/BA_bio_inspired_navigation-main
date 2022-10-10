@@ -66,13 +66,66 @@ def pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, env):
     start = time.time()
     ###changes by Haoyang Sun--End
 
+
+    ###env.goal_vector = perform_lookahead_directed(gc_network, pc_network, cognitive_map, env)
+    ###env.goal_vector_original = env.goal_vector
+    ###changes by Haoyang Sun--Start
+    #video = False
+    #plot = False
+    #env.goal_vector = perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env,
+    #                                            goal_pc_idx=goal_pc_idx, video=video, plotting=plot)
     env.goal_vector = perform_lookahead_directed(gc_network, pc_network, cognitive_map, env)
     env.goal_vector_original = env.goal_vector
+    ###changes by Haoyang Sun--End
+
 
     ###changes by Haoyang Sun--Start
     end = time.time()
     helper.timer4LinearLookAhead = helper.timer4LinearLookAhead + (end - start)
     ###changes by Haoyang Sun--End
+
+ #find the cell that has the lowest value among remaining cells
+def find_argmin_with_filter(filter, list):
+    x = []
+    for i in range(len(list)):
+        if i in filter:
+            x.append(list[i])
+    minimum = min(x)
+
+    return list.index(minimum)
+#apply Dijkstra Algorithms to the cognitive map, to find path from the goal to the current.
+def conventional_method(pc_network, cognitive_map, env, goal,current):
+    nr_cells = len(pc_network.place_cells)
+    distance = [1000 for x in range(nr_cells)]
+    distance[goal] = 0
+    path = {}
+    remaining = []
+    for x in range(nr_cells):
+        path[x] =[]
+        remaining.append(x)
+    cont = True
+    path[goal] = [goal]
+    while(cont):
+        #find the cell that has the lowest value among remaining cells
+        i = find_argmin_with_filter(remaining, distance)
+        n_distance = distance[i]+1
+        #expand the edges of this cell and update neighbouring cells
+        for j, connection in enumerate(cognitive_map.topology_cells[i]):
+            if connection == 1 and i != j and n_distance < distance[j]:
+                distance[j] = n_distance
+                path[j] = path[i]
+                path[j].append(j)
+                remaining.remove(i)
+        if current in remaining:
+            cont = True
+        else:
+            cont = False
+    return path[current]
+
+
+
+
+
 
 
 

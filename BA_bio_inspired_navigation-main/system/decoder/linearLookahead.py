@@ -82,6 +82,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     goal_vector = np.array([axis["distance"] for axis in goal_spiking.values()])  # consolidate goal vector from dict
 
     print("------ Goal localization at time-step: ", len(env.xy_coordinates) - 1)
+    print("current method: Linear Look Ahead 2X")
     if len(goal_vector) != 2:
         # Something went wrong and no goal vector was found
         goal_vector = np.random.rand(2) * 0.5
@@ -156,6 +157,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     reward = goal_spiking[angle]["reward"]
 
     print("------ Sub goal localization at time-step: ", len(env.xy_coordinates) - 1)
+    print("current method: Linear Look Ahead Directed")
     for alternative_angle in angles:
         # Print all angles that showed potential
         if goal_spiking[alternative_angle]["reward"] != -1:
