@@ -92,7 +92,11 @@ def find_argmin_with_filter(filter, list):
             x.append(list[i])
     minimum = min(x)
 
-    return list.index(minimum)
+    for i in filter:
+        if list[i] == minimum:
+            return i
+
+
 #apply Dijkstra Algorithms to the cognitive map, to find path from the goal to the current.
 def conventional_method(pc_network, cognitive_map, env, goal,current):
     nr_cells = len(pc_network.place_cells)
@@ -113,14 +117,25 @@ def conventional_method(pc_network, cognitive_map, env, goal,current):
         for j, connection in enumerate(cognitive_map.topology_cells[i]):
             if connection == 1 and i != j and n_distance < distance[j]:
                 distance[j] = n_distance
-                path[j] = path[i]
-                path[j].append(j)
-                remaining.remove(i)
-        if current in remaining:
-            cont = True
-        else:
+                path[j] = path[i].copy()
+                path[j].insert(0,j)
+        remaining.remove(i)
+        if path[current] != []:
             cont = False
     return path[current]
+
+def get_trajectory_from_place_cell(path , pc_network):
+    xy_coordinates = []
+    for next in path:
+        xy_coordinates.insert(0,pc_network.place_cells[next].env_coordinates)
+    return xy_coordinates
+
+def get_current_pc():
+    return
+def get_goal_pc():
+    return
+
+
 
 
 

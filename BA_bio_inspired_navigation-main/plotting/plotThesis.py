@@ -393,6 +393,15 @@ def add_environment(ax):
                              ec=TUM_colors['TUMLightGray'], linewidth=5)
     ax.add_artist(plot_box)
 
+def add_trajectory(ax, xy_coordinates):
+    x_values = []
+    y_values = []
+    for x, y in xy_coordinates:
+        x_values.insert(0, x)
+        y_values.insert(0, y)
+
+    ax.plot(x_values, y_values, color=TUM_colors['TUMBlue'], alpha=1.0)
+
 
 # --------------- Plot sub goal localization map ---------------
 def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename, chosen_idx=0, goal_spiking=None):
@@ -445,6 +454,15 @@ def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, file
     plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
     plt.show()
     plt.close()
+def calculate_trajectory_distance(xy_coordinates):
+    distance = 0.0
+    prev = xy_coordinates[0]
+    for position in xy_coordinates[1::]:
+        dist = [position[0]-prev[0],position[1]-prev[1]]
+        distance = distance + np.linalg.norm(dist)
+        prev = position
+    return distance
+
 
 
 def plot_trajectory(xy_coordinates, door):
@@ -529,6 +547,58 @@ def plot_cognitive_map(env, cognitive_map, pc_network, goal_vector, filename, ch
     ax.add_artist(initial)
 
     current_position = [5.5, 0.5]##xy_coordinates[-1]
+
+    if goal_spiking is not None:
+        for idx, angle in enumerate(goal_spiking):
+
+            if idx % 4 == 0:
+                color = TUM_colors['TUMDarkGray']
+                length = 0.75
+
+                if idx == chosen_idx:
+                    color = TUM_colors['TUMBlue']
+                    length = np.maximum(goal_spiking[angle]["distance"], 0.5)
+                if goal_spiking[angle]["blocked"]:
+                    color = TUM_colors['TUMGray']
+
+                vector = np.array([np.cos(angle), np.sin(angle)]) * length
+                ax.quiver(current_position[0], current_position[1], vector[0], vector[1],
+                          color=color, angles='xy', scale_units='xy', scale=1)
+
+    agent = plt.Circle((current_position[0], current_position[1]), 0.25, color=TUM_colors['TUMDarkGray'])
+    ax.add_artist(agent)
+    angle = env.orientation_angle[-1]
+    ax.quiver(current_position[0], current_position[1], np.cos(angle) * 0.4, np.sin(angle) * 0.4,
+              color=TUM_colors['TUMDarkGray'], headwidth=7,
+              angles='xy', scale_units='xy', scale=1)
+    """
+    if not env.topology_based or (abs(goal_vector[0]) > 0.5 and abs(goal_vector[1]) > 0.5):
+        ax.quiver(current_position[0], current_position[1], goal_vector[0], goal_vector[1],
+                  color=TUM_colors['TUMDarkGray'], angles='xy', scale_units='xy', scale=1,
+                  width=0.01)
+    """
+    plt.axis('square')
+    plt.xlim(-0.5, 11.5)
+    plt.ylim(-0.5, 11.5)
+    plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
+    plt.show()
+    plt.close()
+
+def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_vector, filename, chosen_idx=0, goal_spiking=None):
+    plt.figure()
+
+    #xy_coordinates = env.xy_coordinates
+
+    ax = plt.gca()
+    add_cognitive_map(ax, pc_network, cognitive_map)
+    add_environment(ax)
+    add_trajectory(ax,xy_coordinates)
+
+
+    initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
+    ax.add_artist(initial)
+
+    current_position = [5.5, 0.5]  ##xy_coordinates[-1]
 
     if goal_spiking is not None:
         for idx, angle in enumerate(goal_spiking):

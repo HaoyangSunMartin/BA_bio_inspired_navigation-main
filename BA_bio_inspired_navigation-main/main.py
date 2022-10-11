@@ -10,6 +10,8 @@ from system.bio_model.cognitivemapModel import CognitiveMapNetwork
 
 from system.controller.explorationPhase import compute_exploration_goal_vector
 from system.controller.navigationPhase import compute_navigation_goal_vector
+from system.controller.navigationPhase import conventional_method
+from system.controller.navigationPhase import get_trajectory_from_place_cell
 
 import os
 import matplotlib.animation as animation
@@ -63,9 +65,19 @@ cognitive_map = CognitiveMapNetwork(dt, from_data=from_data)
 if from_data:
     idx = np.argmax(cognitive_map.reward_cells)
     gc_network.set_as_target_state(pc_network.place_cells[idx].gc_connections)
+###changes by Haoyang Sun-start
+#plots before simulation
+print("the cognitive map has in total:", len(pc_network.place_cells), " place cells")
+pc_path = conventional_method(pc_network, cognitive_map, env, 29, 0 )
+conven_tra= get_trajectory_from_place_cell(pc_path, pc_network)
+conven_dist=calculate_trajectory_distance(conven_tra)
+print("using the conventional approach, the pc_path is:", pc_path)
 
+print("using the conventional approach, the traveled distance is:", conven_dist)
+
+plot_trajectory_on_map(conven_tra,env,cognitive_map,pc_network,[0,0],"convention_trajectory_map")
 plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map")
-
+###changes by Haoyang Sun-end
 # run simulation
 nr_steps = 15000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
