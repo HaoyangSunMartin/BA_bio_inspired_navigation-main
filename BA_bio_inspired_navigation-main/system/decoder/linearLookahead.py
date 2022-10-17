@@ -94,7 +94,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
     ###plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename)
     ###changed by Haoyang Sun--Start
-    plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename)
+    #plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename)
     ###changed by Haoyang Sun--End
     return goal_vector
 
@@ -181,6 +181,6 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     filename = "_subgoal_" + str(len(env.xy_coordinates) - 1)
     ###plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
     ###changed by Haoyang Sun--Start
-    plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
+    #plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
     ###changed by Haoyang Sun--End
     return goal_vector

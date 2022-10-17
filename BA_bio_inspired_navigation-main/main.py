@@ -46,6 +46,7 @@ visualize = False
 ###changes by HAOYANG SUN-end
 env_model = "linear_sunburst"  # "plane" for default, "single_line_traversal", "linear_sunburst"
 vector_model = "linear_lookahead"  # "linear_lookahead" for default, "phase_offset_detector", "spike_detection"
+env_coding = "plane_doors_5c_3o"
 
 pod_network = PhaseOffsetDetectorNetwork(16, 9, n) if vector_model == "phase_offset_detector" else None
 spike_detector = SpikeDetector() if vector_model == "spike_detection" else None
@@ -75,11 +76,11 @@ print("using the conventional approach, the pc_path is:", pc_path)
 
 print("using the conventional approach, the traveled distance is:", conven_dist)
 
-plot_trajectory_on_map(conven_tra,env,cognitive_map,pc_network,[0,0],"convention_trajectory_map")
-plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map")
+plot_trajectory_on_map(conven_tra,env,cognitive_map,pc_network,[0,0],"convention_trajectory_map",env_coding=env_coding)
+plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map",env_coding=env_coding)
 ###changes by Haoyang Sun-end
 # run simulation
-nr_steps = 15000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+nr_steps = 7000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
 ###changes by HAOYANG SUN-start
 nr_steps_exploration = 0
@@ -215,7 +216,7 @@ else:
 
     # Plot last state
     ###cognitive_map_plot(pc_network, cognitive_map, environment=env_model)
-    cognitive_map_plot(pc_network, cognitive_map)
+    cognitive_map_plot(pc_network, cognitive_map, env_coding=env_coding)
     # Save place network and cognitive map to reload it later
     pc_network.save_pc_network()  # provide filename="_navigation" to avoid overwriting the exploration phase
     cognitive_map.save_cognitive_map()  # provide filename="_navigation" to avoid overwriting the exploration phase
@@ -259,6 +260,16 @@ else:
     error_plot(error_array)
     print(error_array)
 
+
+    ###changes by Haoyang Sun-start
+    dist = calculate_trajectory_distance(env.xy_coordinates)
+    print("the distance traveled is: ", dist)
+    plot_trajectory_on_map(env.xy_coordinates, env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map", env_coding=env_coding)
+
+
+    #plot_cognitive_map(env, cognitive_map, pc_network, [0, 0], "initial_cognitive_map")
+
+    ###changes by Haoyang Sun-end
     # Save the data of all trials in a dedicated folder
     directory = "experiments/"
     if not os.path.exists(directory):
