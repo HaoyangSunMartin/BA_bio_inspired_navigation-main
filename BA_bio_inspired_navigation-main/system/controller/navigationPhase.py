@@ -17,14 +17,24 @@ def compute_navigation_goal_vector(gc_network, pc_network, cognitive_map, nr_ste
     update_fraction = 0.2 if model == "linear_lookahead" else 0.5  # how often the goal vector has to be recalculated
     if env.topology_based and distance_to_goal < 0.3:
         # Agent has reached sub goal in topology based navigation -> pick next goal
+
+        ###changes by Haoyang Sun - start
+        #env.goal_visited()
+        ###changes by Haoyang Sun - end
+
         pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, env)
+
     elif (not env.topology_based and distance_to_goal/distance_to_goal_original < update_fraction
           and distance_to_goal_original > 0.3) or nr_steps == 0:
         # Vector-based navigation and agent has traversed a large portion of the goal vector, it is recalculated
+        ###changes by Haoyang Sun - start
+        #env.goal_visited()
+        ###changes by Haoyang Sun - end
         find_new_goal_vector(gc_network, pc_network, cognitive_map, env,
                              model=model, pod=pod, spike_detector=spike_detector)
     else:
         # Otherwise vector is not recalculated but just updated according to traveling speed
+        # using path integration
         env.goal_vector = env.goal_vector - np.array(env.xy_speeds[-1]) * env.dt
 
 

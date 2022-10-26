@@ -2,8 +2,9 @@
 from plotting.plotThesis import plot_grid_cell_modules, plot_3D_sheets
 import numpy as np
 import os
+###?
 
-
+###?
 # Grid Cell model is based on Edvardsen 2015. Please refer to the thesis or the paper for detailed explanations
 
 

@@ -144,17 +144,25 @@ def animation_frame(frame):
 
         # place cell network track gc firing
         goal_distance = np.linalg.norm(env.xy_coordinates[-1] - env.goal_location)
+        #print("current goal location is: ", env.goal_location)
         reward = 1 if goal_distance < 0.1 else 0
         reward_first_found = False
         if reward == 1 and (len(cognitive_map.reward_cells) == 0 or np.max(cognitive_map.reward_cells) != 1):
             reward_first_found = True
             gc_network.set_current_as_target_state()
 
-        [firing_values, created_new_pc] = pc_network.track_movement(gc_network.gc_modules, reward_first_found)
+
+        [firing_values, created_new_pc, PC_idx] = pc_network.track_movement(gc_network.gc_modules, reward_first_found, generate_new_PC=False)
+
+
 
         if created_new_pc:
             pc_network.place_cells[-1].env_coordinates = np.array(env.xy_coordinates[-1])
 
+        ###changes by Haoyang Sun - start
+        if len(env.visited_PCs) ==0 or env.visited_PCs[-1] != PC_idx:
+            env.visited_PCs.append(PC_idx)
+            print("the visited PCs are: ", env.visited_PCs)
         # cognitive map track pc firing
         cognitive_map.track_movement(firing_values, created_new_pc, reward)
 

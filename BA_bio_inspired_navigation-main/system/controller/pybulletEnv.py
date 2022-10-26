@@ -69,12 +69,18 @@ class PybulletEnvironment:
 
         self.max_speed = max_speed
         self.arena_size = arena_size
-        self.goal = np.array([0, 0])  # used for navigation (eg. sub goals)
+        self.goal = np.array([0, 0]) # used for navigation (eg. sub goals)
+
 
         self.goal_vector_original = np.array([1, 1])  # egocentric goal vector after last recalculation
         self.goal_vector = np.array([0, 0])  # egocentric goal vector after last update
 
         self.goal_idx = 0  # pc_idx of goal
+
+        ### changes by Haoyang Sun - start
+        ##this list records all the visited PCs, which will be excluded during LLA
+        self.visited_PCs = []
+        ### changes by Haoyang Sun - end
 
         self.turning = False  # agent state, used for controller
 
@@ -101,6 +107,13 @@ class PybulletEnvironment:
                                     controlMode=p.VELOCITY_CONTROL,
                                     targetVelocities=gains,
                                     forces=[10, 10])
+
+    ###changes by Haoyang Sun - start
+    #def goal_visited(self):
+    #    self.visited_PCs.append(self.goal_idx)
+    #    print("visited PCs are: ",self.visited_PCs)
+    ###changes by Haoyang Sun - end
+
 
     #when called, this function saves the current position, current orientation(abosolute Euler Term in 2D plane)
     #xy_velocity and absolute velocity in respective variables
@@ -263,6 +276,13 @@ class PybulletEnvironment:
 
     def detect_obstacles(self):
         return self.directions
+
+    ###changes by Haoyang Sun - start
+    ##this function changes goal from the current to the idx-th PC
+    def change_goal(self, idx):
+
+        return
+    ###changes by Haoyang Sun - end
 
 
 

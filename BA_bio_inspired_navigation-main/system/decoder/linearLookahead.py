@@ -5,7 +5,9 @@ from plotting.plotThesis import plot_sub_goal_localization
 
 def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=False, plotting=False, goal_pc_idx=None):
     """Performs a linear lookahead to find an offset in grid cell spiking in either x or y direction."""
+    ###?
     gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
+    ###?
 
     dt = gc_network.dt * 10  # checks spiking only every nth step
     speed = 0.5  # match actual speed
@@ -17,7 +19,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     max_nr_steps = int(max_distance / (speed * dt))
 
     for idx, xy_speed in enumerate(xy_speeds):
-        axis = int(idx / 2)  # either x or y
+        axis = int(idx / 2)  # either x or y (0 for x, 1 for y)
 
         reward_array = []  # save rewards during lookahead, to create lookahead video
         goal_found = None
