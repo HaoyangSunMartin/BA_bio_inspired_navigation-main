@@ -9,8 +9,10 @@ from system.bio_model.placecellModel import PlaceCellNetwork
 from system.bio_model.cognitivemapModel import CognitiveMapNetwork
 
 from system.controller.explorationPhase import compute_exploration_goal_vector
+from system.controller.explorationPhase import get_exploration_trajectory
 from system.controller.navigationPhase import compute_navigation_goal_vector
 from system.controller.navigationPhase import conventional_method
+from system.controller.navigationPhase import conventional_method_A_star
 from system.controller.navigationPhase import get_trajectory_from_place_cell
 
 import os
@@ -28,6 +30,19 @@ print(helper.timer4LinearLookAhead)
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
 from_data = True
+nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+#nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
+nr_steps_exploration = 0
+
+construct_new_cognitive_map = False
+
+conventional = False
+
+goal_idx = 27
+
+env_coding = "plane_doors_3"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+            #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
+            # "plane" for default, "plane_doors", "plane_doors_individual"
 # set time-step size of simulation
 dt = 1e-2  # in seconds, use 1e-2 for sufficient results
 
@@ -46,12 +61,12 @@ visualize = False
 ###changes by HAOYANG SUN-end
 env_model = "linear_sunburst"  # "plane" for default, "single_line_traversal", "linear_sunburst"
 vector_model = "linear_lookahead"  # "linear_lookahead" for default, "phase_offset_detector", "spike_detection"
-env_coding = "plane_doors_5c_3o"
+env_coding = env_coding
 
 pod_network = PhaseOffsetDetectorNetwork(16, 9, n) if vector_model == "phase_offset_detector" else None
 spike_detector = SpikeDetector() if vector_model == "spike_detection" else None
 
-env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network)
+env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_option=env_coding)
 
 #from_data = False  # False for default, set to True if you want to load cognitive map data to the model
 ###changes by HAOYANG SUN-start
@@ -66,24 +81,29 @@ cognitive_map = CognitiveMapNetwork(dt, from_data=from_data)
 if from_data:
     idx = np.argmax(cognitive_map.reward_cells)
     gc_network.set_as_target_state(pc_network.place_cells[idx].gc_connections)
+
 ###changes by Haoyang Sun-start
 #plots before simulation
-print("the cognitive map has in total:", len(pc_network.place_cells), " place cells")
-pc_path = conventional_method(pc_network, cognitive_map, env, 29, 0 )
-conven_tra= get_trajectory_from_place_cell(pc_path, pc_network)
-conven_dist=calculate_trajectory_distance(conven_tra)
-print("using the conventional approach, the pc_path is:", pc_path)
-
-print("using the conventional approach, the traveled distance is:", conven_dist)
-
-plot_trajectory_on_map(conven_tra,env,cognitive_map,pc_network,[0,0],"convention_trajectory_map",env_coding=env_coding)
+if conventional:
+    print("the cognitive map has in total:", len(pc_network.place_cells), " place cells")
+    pc_path = conventional_method_A_star(pc_network, cognitive_map, env, 29, 0)
+    conven_tra = get_trajectory_from_place_cell(pc_path, pc_network)
+    conven_dist = calculate_trajectory_distance(conven_tra)
+    print("using the conventional approach, the pc_path is:", pc_path)
+    print("using the conventional approach, the traveled distance is:", conven_dist)
+    plot_trajectory_on_map(conven_tra, env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
+                           env_coding=env_coding)
+if construct_new_cognitive_map:
+    plot_trajectory_on_map(get_exploration_trajectory(), env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
+                           env_coding=env_coding)
 plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map",env_coding=env_coding)
 ###changes by Haoyang Sun-end
+
 # run simulation
-nr_steps = 7000 #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+nr_steps = nr_steps #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
 ###changes by HAOYANG SUN-start
-nr_steps_exploration = 0
+nr_steps_exploration = nr_steps_exploration
 ###changes by HAOYANG SUN-end
 nr_plots = 5  # allows to plot during the run of a simulation
 nr_trials = 1  # 1 for default, 50 for decoder test, 1 for maze exploration
@@ -152,7 +172,7 @@ def animation_frame(frame):
             gc_network.set_current_as_target_state()
 
 
-        [firing_values, created_new_pc, PC_idx] = pc_network.track_movement(gc_network.gc_modules, reward_first_found, generate_new_PC=False)
+        [firing_values, created_new_pc, PC_idx] = pc_network.track_movement(gc_network.gc_modules, reward_first_found, generate_new_PC=construct_new_cognitive_map)
 
 
 
@@ -163,9 +183,16 @@ def animation_frame(frame):
         if len(env.visited_PCs) ==0 or env.visited_PCs[-1] != PC_idx:
             env.visited_PCs.append(PC_idx)
             print("the visited PCs are: ", env.visited_PCs)
+
+        ###changes by Haoyang Sun - end
+
         # cognitive map track pc firing
         cognitive_map.track_movement(firing_values, created_new_pc, reward)
-
+        ###changes by Haoyang Sun-start
+        ##if the robot has reached the goal, end the simulation
+        if goal_idx in env.visited_PCs:
+            break
+        ###changes by Haoyang Sun-end
         # plot or print intermediate update in console
         if not video and i % int(nr_steps / nr_plots) == 0:
             progress_str = "Progress: " + str(int(i * 100 / nr_steps)) + "%"

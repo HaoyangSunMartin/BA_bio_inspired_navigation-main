@@ -14,7 +14,11 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     xy_speeds = np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed
     goal_spiking = {}  # "axis": {"reward_value", "idx_place_cell", "distance", "step"}
 
-    max_distance = 1.1 * env.arena_size  # after this distance lookahead is aborted
+    ###changes by Haoyang Sun - start
+    #this defines the horizon factor of LLA
+    horizon = 1.1 #1.1 for Tim Engelmann's method
+    max_distance = horizon * env.arena_size  # after this distance lookahead is aborted
+    ###changes by Haoyang Sun - end
 
     max_nr_steps = int(max_distance / (speed * dt))
 
@@ -30,10 +34,12 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
             ###changed by Haoyang Sun--End
 
             # Compute reward firing
+            # if the goal_PC is known, then only consolidate the reward signal of that PC.
+            # Otherwise, choose the highest spiking reward signal.
             if goal_pc_idx is None:
                 # Check all pc cells and identify reward spiking
                 firing_values = pc_network.compute_firing_values(gc_network.gc_modules, virtual=True, axis=axis, plot=plot)
-                [reward, idx_place_cell] = cognitive_map.compute_reward_spiking(firing_values)
+                [reward, idx_place_cell] = cognitive_map.compute_reward_spiking_with_filter(firing_values, env.visited_PCs)
             else:
                 # Only look for one specific place cell (goal location)
                 s_vectors = gc_network.consolidate_gc_spiking(virtual=True)
@@ -45,9 +51,14 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 reward = firing if firing > cognitive_map.active_threshold else 0
                 idx_place_cell = goal_pc_idx
 
+
+            ###changes by Haoyang Sun - start
+
+            ###changes by Haoyang Sun - end
             reward_array.append(reward)
 
             distance = xy_speed[axis] * i * dt  # lookahead distance
+
             if axis not in goal_spiking or reward - goal_spiking[axis]["reward"] > 0:
                 # First entrance or exceeds previous found value
                 goal_spiking[axis] = {"reward": reward, "idx_place_cell": idx_place_cell,
@@ -113,7 +124,11 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
 
     goal_spiking = {}  # "angle": {"reward_value", "idx_place_cell", "distance", "step"}
 
-    max_distance = 0.5 * env.arena_size  # after this distance lookahead is aborted
+
+    # this defines the horizon factor of LLA
+    horizon = 1.1  # 1.1 for Tim Engelmann's method
+    max_distance = horizon * env.arena_size  # after this distance lookahead is aborted
+    ###changes by Haoyang Sun - end
     max_nr_steps = int(max_distance / (speed * dt))
 
     for idx, angle in enumerate(angles):
@@ -136,8 +151,10 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
 
         for i in range(max_nr_steps):
             firing_values = pc_network.compute_firing_values(gc_network.gc_modules, virtual=True)
-            [reward, idx_place_cell] = cognitive_map.compute_reward_spiking(firing_values)  # highest reward spiking
+            [reward, idx_place_cell] = cognitive_map.compute_reward_spiking_with_filter(firing_values, env.visited_PCs)  # highest reward spiking
+            ###changes by Haoyang Sun - start
 
+            ###changes by Haoyang Sun - end
             distance = np.linalg.norm(xy_speed * i * dt)  # lookahead distance traveled
             if angle not in goal_spiking or reward - goal_spiking[angle]["reward"] > 0:
                 # First entrance or exceeds previous found value

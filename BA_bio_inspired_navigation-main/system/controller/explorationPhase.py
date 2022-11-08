@@ -43,6 +43,71 @@ def pick_random_location(env, rectangular=False):
 def automated_exploration(env):
     print("calling automated Exploration module")
 
+def get_exploration_trajectory():
+    sll = [1.5, 1.5]
+    slu = [1.5, 4.5]
+    srl = [9.5, 1.5]
+    sru = [9.5, 4.5]
+    ing01 = [1.5, 4.5]
+    outg01 = [1.5, 7.5]
+    ing02 = [3.5, 4.5]
+    outg02 = [3.5, 7.5]
+    ing03 = [5.5, 4.5]
+    outg03 = [5.5, 7.5]
+    ing04 = [7.5, 4.5]
+    outg04 = [7.5, 7.5]
+    ing05 = [9.5, 4.5]
+    outg05 = [9.5, 7.5]
+
+    en01 = [0.5, 7.5]
+    en02 = [2.5, 7.5]
+    en03 = [4.5, 7.5]
+    en04 = [6.5, 7.5]
+    en05 = [8.5, 7.5]
+    en06 = [10.5, 7.5]
+
+    ex01 = [0.5, 10]
+    ex02 = [2.5, 10]
+    ex03 = [4.5, 10]
+    ex04 = [6.5, 10]
+    ex05 = [8.5, 10]
+    ex06 = [10.5, 10]
+
+    ##G01: [1.5, 4.5--7.5], G02: [3.5, 4.5--7.5], G03: [5.5, 4.5--7.5], G04: [7.5, 4.5--7.5], G05: [9.5, 4.5--7.5]
+    goals = np.array([
+        # sll,
+        slu,
+        # srl,
+        sru,
+        # sll,
+        # srl,
+        ing05,
+        outg05,
+        outg04,
+        ing04,
+        ing03,
+        outg03,
+        outg02,
+        ing02,
+        ing01,
+        outg01,
+        en01,
+        ex01,
+        ex02,
+        en02,
+        en03,
+        ex03,
+        ex04,
+        en04,
+        en05,
+        ex05,
+        ex06,
+        en06,
+        outg05,
+        ing05
+
+    ])
+    return goals
 
 def navigate_to_location(env):
     """Pre-coded exploration path for linear sunburst maze"""
@@ -80,12 +145,12 @@ def navigate_to_location(env):
 
     ##G01: [1.5, 4.5--7.5], G02: [3.5, 4.5--7.5], G03: [5.5, 4.5--7.5], G04: [7.5, 4.5--7.5], G05: [9.5, 4.5--7.5]
     goals = np.array([
-        sll,
+        #sll,
         slu,
-        srl,
+        #srl,
         sru,
-        sll,
-        srl,
+        #sll,
+        #srl,
         ing05,
         outg05,
         outg04,

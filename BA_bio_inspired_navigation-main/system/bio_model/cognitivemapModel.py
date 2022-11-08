@@ -15,10 +15,12 @@ class CognitiveMapNetwork:
             self.recency_cells = np.array([])  # array of firing values between 0 and 1; 1 where the agent is
             self.topology_cells = np.zeros((1, 1))  # matrix of connections, size (#pc x #pc)
             self.reward_cells = np.array([])  # array of firing values between 0 and 1; 1 where the goal is
+            self.block_cells = np.array([])
         else:
             self.topology_cells = np.load("data/cognitive_map/topology_cells.npy")
             self.reward_cells = np.load("data/cognitive_map/reward_cells.npy")
             self.recency_cells = np.zeros_like(self.reward_cells)
+            self.block_cells = []
             self.recency_cells[0] = 1
 
         self.dt = dt
@@ -46,6 +48,20 @@ class CognitiveMapNetwork:
 
         # Add a reward cell to the end, reward value depends on if an reward has been found
         self.reward_cells = np.append(self.reward_cells, reward)
+
+    #this function computes the reward firing with filter
+    def compute_reward_spiking_with_filter(self, pc_firing, filter):
+        """Determine which place cells are active and multiply with reward value"""
+        pc_firing = np.where(np.array(pc_firing) > self.active_threshold, pc_firing, 0)  # Check for active pc
+
+        rewards = self.reward_cells * pc_firing  # Multiply with reward spiking
+
+        for idx in filter:
+            rewards[idx] = 0 #filter out the visited PCs
+
+        idx_pc_active = np.argmax(rewards)
+        reward = np.max(rewards)
+        return [reward, idx_pc_active]  # Return highest reward and idx of pc
 
     def compute_reward_spiking(self, pc_firing):
         """Determine which place cells are active and multiply with reward value"""
@@ -98,6 +114,11 @@ class CognitiveMapNetwork:
             self.reward_cells = reward_cells
 
             self.prior_idx_pc_firing = idx_pc_active
+
+    ###changes by Haoyang Sun-start
+    def add_block_cell(self, block_cell):
+        self.block_cells.append(block_cell)
+    ###changes by Haoyang Sun-end
 
     def save_cognitive_map(self, filename=""):
         directory = "data/cognitive_map/"

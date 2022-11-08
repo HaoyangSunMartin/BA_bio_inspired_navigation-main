@@ -134,6 +134,37 @@ def conventional_method(pc_network, cognitive_map, env, goal,current):
             cont = False
     return path[current]
 
+def conventional_method_A_star(pc_network, cognitive_map, env, goal,current):
+    nr_cells = len(pc_network.place_cells)
+    distance = [1000 for x in range(nr_cells)]
+    distance[goal] = 0
+    xy_distance = [1000 for x in range(nr_cells)]
+    path = {}
+    remaining = []
+    goal_xy = pc_network.place_cells[current].env_coordinates
+    for x in range(nr_cells):
+        path[x] =[]
+        remaining.append(x)
+        #xy_distance[x] = np.linalg.norm(goal_xy - pc_network.place_cells[x].env_coordinates)
+    cont = True
+    path[goal] = [goal]
+    while(cont):
+        #find the cell that has the lowest value among remaining cells
+        i = find_argmin_with_filter(remaining, distance)
+
+        #expand the edges of this cell and update neighbouring cells
+        for j, connection in enumerate(cognitive_map.topology_cells[i]):
+            n_distance = distance[i] + np.linalg.norm(pc_network.place_cells[i].env_coordinates-pc_network.place_cells[j].env_coordinates)
+            if connection == 1 and i != j and n_distance < distance[j]:
+                distance[j] = n_distance
+                path[j] = path[i].copy()
+                path[j].insert(0,j)
+                print("expanding node: ",i ,"node ", j, " expanded: distance", n_distance, "path: ", path[j])
+        remaining.remove(i)
+        if path[current] != []:
+            cont = False
+    return path[current]
+
 def get_trajectory_from_place_cell(path , pc_network):
     xy_coordinates = []
     for next in path:

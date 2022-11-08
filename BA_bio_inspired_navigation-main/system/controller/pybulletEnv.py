@@ -11,7 +11,7 @@ from system.controller.navigationPhase import pick_intermediate_goal_vector, fin
 
 class PybulletEnvironment:
     """This class deals with everything pybullet or environment (obstacles) related"""
-    def __init__(self, visualize, env_model, dt, pod=None):
+    def __init__(self, visualize, env_model, dt, pod=None, doors_option = "plane"):
         self.visualize = visualize  # to open JAVA application
         self.env_model = env_model  # string specifying env_model
         self.pod = pod  # if Phase Offset detectors are used
@@ -36,7 +36,7 @@ class PybulletEnvironment:
             #doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
-            doors_option = "plane_doors_5c_3o"
+            #doors_option = "plane"
             ###Changes by Haoyang Sun - END
             p.loadURDF("environment/linear_sunburst_map/" + doors_option + ".urdf")
             base_position = [5.5, 0.55, 0.02]
@@ -174,7 +174,7 @@ class PybulletEnvironment:
         current_heading = p.getEulerFromQuaternion(ray_reference)[2]  # in radians
         goal_vector_angle = np.arctan2(self.goal_vector[1], self.goal_vector[0])
         angles = np.linspace(0, 2 * np.pi, num=self.num_ray_dir, endpoint=False)
-
+        emergent_manuver = False
         # direction where we want to check for obstacles
         angles = np.append(angles, [goal_vector_angle, current_heading])
 
@@ -200,6 +200,8 @@ class PybulletEnvironment:
             self.goal_vector_original = self.goal_vector
 
             self.topology_based = True
+            emergent_manuver = True
+        ###??? the handling here need to be checked more carefully
 
         if not exploration_phase:
             if self.topology_based or ray_dist[-1] < 0.6 or ray_dist[-2] < 0.6:
@@ -208,6 +210,15 @@ class PybulletEnvironment:
                     # Switching to topology-based, or already topology-based but new direction became available
                     self.topology_based = True
                     pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, self)
+
+        if not emergent_manuver:
+            for i, dis in enumerate(ray_dist):
+                if dis < 0.9:
+                    blocked_angle = angle[i]
+                    vec = np.array([np.cos(blocked_angle), np.sin(blocked_angle)]) * 0.9
+                    self.create_block_cell(gc_network, pc_network, cognitive_map,vec)
+
+
 
         return self.compute_gains()
 
@@ -278,10 +289,14 @@ class PybulletEnvironment:
         return self.directions
 
     ###changes by Haoyang Sun - start
-    ##this function changes goal from the current to the idx-th PC
-    def change_goal(self, idx):
+    ##this function creates block cell with an allocentric position as input
+    def create_block_cell(self, gc_network, pc_network, cognitive_map, vector):
+        gc_network.reset_s_virtual()
+        gc_network.track_movement(vector, virtual=True, dt_alternative=1)
 
         return
+
+
     ###changes by Haoyang Sun - end
 
 
