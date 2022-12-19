@@ -210,14 +210,14 @@ class PybulletEnvironment:
                     # Switching to topology-based, or already topology-based but new direction became available
                     self.topology_based = True
                     pick_intermediate_goal_vector(gc_network, pc_network, cognitive_map, self)
-
+        """
         if not emergent_manuver:
             for i, dis in enumerate(ray_dist):
                 if dis < 0.9:
                     blocked_angle = angle[i]
                     vec = np.array([np.cos(blocked_angle), np.sin(blocked_angle)]) * 0.9
                     self.create_block_cell(gc_network, pc_network, cognitive_map,vec)
-
+        """
 
 
         return self.compute_gains()
@@ -286,16 +286,39 @@ class PybulletEnvironment:
 
 
     def detect_obstacles(self):
+
         return self.directions
 
     ###changes by Haoyang Sun - start
+    def get_blocked_directions(self, distance):
+        ##this function returns the allocentric direction vectors that are defined as "blocked"
+        dire_vectors= []
+        #ray_reference = p.getLinkState(self.carID, 0)[1]
+        #current_heading = p.getEulerFromQuaternion(ray_reference)[2]  # in radians
+        #goal_vector_angle = np.arctan2(self.goal_vector[1], self.goal_vector[0])
+        angles = np.linspace(0, 2 * np.pi, num=self.num_ray_dir, endpoint=False)
+        emergent_manuver = False
+        # direction where we want to check for obstacles
+        #angles = np.append(angles, [goal_vector_angle, current_heading])
+
+        ray_dist = self.ray_detection(angles)  # determine ray values
+        for i, dis in enumerate(ray_dist):
+            if dis < distance:
+                blocked_angle = angles[i]
+                vec = np.array([np.cos(blocked_angle), np.sin(blocked_angle)]) * dis
+                dire_vectors.append(vec)
+        return dire_vectors
+        #changed = self.update_directions(ray_dist)  # check if an direction became unblocked
     ##this function creates block cell with an allocentric position as input
+    """
     def create_block_cell(self, gc_network, pc_network, cognitive_map, vector):
         gc_network.reset_s_virtual()
         gc_network.track_movement(vector, virtual=True, dt_alternative=1)
-
+        firing_values = pc_network.compute_firing_values(gc_network.gc_modules, virtual=True)
+        
         return
 
+    """
 
     ###changes by Haoyang Sun - end
 

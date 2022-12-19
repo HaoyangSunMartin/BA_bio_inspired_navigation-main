@@ -108,13 +108,18 @@ def plot_grid_cell_modules(gc_modules, i, plot_target=False, plot_matches=False)
     plt.close()
 
 
-def plot_3D_sheets(gc_modules, i):
+def plot_3D_sheets(gc_modules, i ):
 
     fig = plt.figure(figsize=(12, 4))
 
     for idx, gc in enumerate(gc_modules):
-        n = int(np.sqrt(len(gc.s)))
-        sheet = np.reshape(gc.s, (n, n))
+        #this if statement decides the shape of the s vector(also if cuda is used)
+        if len(gc.get_s(virtual=False).shape) == 2:
+            sheet = gc.get_s(virtual=False)
+        else:
+            n = int(np.sqrt(len(gc.get_s(False))))
+            sheet = np.reshape(gc.get_s(False), (n, n))
+
         xmin, xmax, nx = 0, sheet.shape[0] - 1, sheet.shape[0]
         ymin, ymax, ny = 0, sheet.shape[1] - 1, sheet.shape[1]
         x, y = np.linspace(xmin, xmax, nx), np.linspace(ymin, ymax, ny)
@@ -374,6 +379,22 @@ def add_cognitive_map(ax, pc_network, cognitive_map):
                             fc=TUM_colors['TUMBlue'],
                             ec=TUM_colors['TUMGray'], linewidth=0)
         ax.add_artist(circle)
+
+def add_block_cells(ax, bc_list):
+    for i, bc in enumerate(bc_list.block_cells):
+
+
+        ###changes by Haoyang Sun--Start
+        #annotate the place cells with their IDs
+        x_coord, y_coord = bc.env_coordinates
+        ax.text(x_coord,y_coord, str(i), fontsize=10)
+
+        ###changes by Haoyang Sun--End
+        ax.plot(x_coord, y_coord, 'r+')
+
+
+
+
 
 
 def add_environment(ax,env="plane"):
@@ -644,3 +665,93 @@ def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_v
     plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
     plt.show()
     plt.close()
+
+def plot_block_cells_on_map(env, cognitive_map, bc_list, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+    plt.figure()
+
+    # xy_coordinates = env.xy_coordinates
+
+    ax = plt.gca()
+    add_block_cells(ax, bc_list)
+    add_environment(ax, env_coding)
+
+
+def plot_cognitive_map_with_bc(env, cognitive_map, bc_list, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+    plt.figure()
+
+    xy_coordinates = env.xy_coordinates
+
+    ax = plt.gca()
+    add_cognitive_map(ax, pc_network, cognitive_map)
+    add_environment(ax, env_coding)
+    add_block_cells(ax, bc_list)
+
+    initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
+    ax.add_artist(initial)
+
+    current_position = [5.5, 0.5]##xy_coordinates[-1]
+
+    if goal_spiking is not None:
+        for idx, angle in enumerate(goal_spiking):
+
+            if idx % 4 == 0:
+                color = TUM_colors['TUMDarkGray']
+                length = 0.75
+
+                if idx == chosen_idx:
+                    color = TUM_colors['TUMBlue']
+                    length = np.maximum(goal_spiking[angle]["distance"], 0.5)
+                if goal_spiking[angle]["blocked"]:
+                    color = TUM_colors['TUMGray']
+
+                vector = np.array([np.cos(angle), np.sin(angle)]) * length
+                ax.quiver(current_position[0], current_position[1], vector[0], vector[1],
+                          color=color, angles='xy', scale_units='xy', scale=1)
+
+    agent = plt.Circle((current_position[0], current_position[1]), 0.25, color=TUM_colors['TUMDarkGray'])
+    ax.add_artist(agent)
+    angle = env.orientation_angle[-1]
+    ax.quiver(current_position[0], current_position[1], np.cos(angle) * 0.4, np.sin(angle) * 0.4,
+              color=TUM_colors['TUMDarkGray'], headwidth=7,
+              angles='xy', scale_units='xy', scale=1)
+    """
+    if not env.topology_based or (abs(goal_vector[0]) > 0.5 and abs(goal_vector[1]) > 0.5):
+        ax.quiver(current_position[0], current_position[1], goal_vector[0], goal_vector[1],
+                  color=TUM_colors['TUMDarkGray'], angles='xy', scale_units='xy', scale=1,
+                  width=0.01)
+    """
+    plt.axis('square')
+    plt.xlim(-0.5, 11.5)
+    plt.ylim(-0.5, 11.5)
+    plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
+    plt.show()
+    plt.close()
+def plot_env_map_with_bc(bc_list,env, env_coding="plane"):
+    plt.figure()
+
+    ax = plt.gca()
+    add_environment(ax, env_coding)
+    add_block_cells(ax, bc_list)
+
+    current_position = env.xy_coordinates[-1]
+
+    agent = plt.Circle((current_position[0], current_position[1]), 0.25, color=TUM_colors['TUMDarkGray'])
+
+    ax.add_artist(agent)
+    angle = env.orientation_angle[-1]
+    ax.quiver(current_position[0], current_position[1], np.cos(angle) * 0.4, np.sin(angle) * 0.4,
+              color=TUM_colors['TUMDarkGray'], headwidth=7,
+              angles='xy', scale_units='xy', scale=1)
+    """
+    if not env.topology_based or (abs(goal_vector[0]) > 0.5 and abs(goal_vector[1]) > 0.5):
+        ax.quiver(current_position[0], current_position[1], goal_vector[0], goal_vector[1],
+                  color=TUM_colors['TUMDarkGray'], angles='xy', scale_units='xy', scale=1,
+                  width=0.01)
+    """
+    plt.axis('square')
+    plt.xlim(-0.5, 11.5)
+    plt.ylim(-0.5, 11.5)
+
+    plt.show()
+    plt.close()
+

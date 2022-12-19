@@ -1,8 +1,12 @@
+import numpy
 
 from system.controller.pybulletEnv import PybulletEnvironment
 from plotting.plotResults import *
 from plotting.plotThesis import *
 from system.bio_model.gridcellModel import GridCellNetwork
+from system.bio_model.gridcellModel_CUDA import GridCellNetwork_CUDA
+
+from system.bio_model.blockcellModel import BlockCellList
 from system.decoder.phaseOffsetDetector import PhaseOffsetDetectorNetwork
 from system.decoder.spikeDetection import SpikeDetector
 from system.bio_model.placecellModel import PlaceCellNetwork
@@ -21,6 +25,59 @@ import matplotlib as mpl
 import numpy as np
 import system.helper as helper
 import time
+from numba import cuda
+import math
+#####Testing Ground For Python-start
+
+"""
+cuda.detect()
+cuda.select_device(0)
+
+@cuda.jit
+def increment_a_2D_array(an_array):
+    x, y = cuda.grid(2)
+    if x < an_array.shape[0] and y < an_array.shape[1]:
+       an_array[x, y] = an_array[x,y] + 2
+@cuda.jit
+def increment_a_2D_array2(an_array):
+    x, y = cuda.grid(2)
+    if x < an_array.shape[0] and y < an_array.shape[1]:
+       an_array[x, y] = an_array[x,y] + 20
+
+an_array = np.ones((1600,1600))
+threadsperblock = (32, 32)
+blockspergrid_x = math.ceil(an_array.shape[0] / threadsperblock[0])
+blockspergrid_y = math.ceil(an_array.shape[1] / threadsperblock[1])
+blockspergrid = (blockspergrid_x, blockspergrid_y)
+print(blockspergrid)
+g_array = cuda.to_device(an_array)
+increment_a_2D_array[blockspergrid, threadsperblock](g_array)
+increment_a_2D_array2[blockspergrid, threadsperblock](g_array)
+print(g_array.copy_to_host())
+
+
+
+
+
+headings = [[-1, 0], [0, 1], [0, -1], [1, 0]] # [W, N, S, E]
+
+grid = np.indices((5, 5))  # grid function to create x and y vectors
+x = np.concatenate(grid[1])  # x vector of form eg. [0, 0, 0, 1, 1, 1, 2, 2, 2]
+y = np.concatenate(grid[0])  # y vector of form eg. [0, 1, 2, 0, 1, 2, 0, 1, 2]
+index = 2 * np.mod(y, 2) + np.mod(x, 2)  # refer to thesis for explanation of formula
+index.astype(int)
+h = np.take(headings, index, axis=0)
+
+
+vector = [0.5,0.8]
+vector = numpy.multiply(vector,[0.5,0.5])
+print(vector)
+"""
+
+
+
+
+#####Testing Ground For Python-end
 
 
 ### changes by Haoyang Sun- Start
@@ -29,7 +86,9 @@ print(helper.timer4LinearLookAhead)
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-from_data = True
+from_data = False
+use_CUDA = False
+bc_enabled =False
 nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
 nr_steps_exploration = 0
@@ -40,7 +99,7 @@ conventional = False
 
 goal_idx = 27
 
-env_coding = "plane_doors_3"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
 # set time-step size of simulation
@@ -52,8 +111,10 @@ n = 40  # 40 for default, size of sheet -> nr of neurons is squared
 gmin = 0.2  # 0.2 for default, maximum arena size, 0.5 -> ~10m | 0.05 -> ~105m
 gmax = 2.4  # 2.4 for default, determines resolution, dont pick to high (>2.4 at speed = 0.5m/s)
 # note that if gc modules are created from data n and M are overwritten
-gc_network = GridCellNetwork(n, M, dt, gmin, gmax=gmax, from_data=from_data)
-
+if use_CUDA:
+    gc_network = GridCellNetwork_CUDA(n, M, dt, gmin, gmax=gmax, from_data=from_data)
+else:
+    gc_network = GridCellNetwork(n, M, dt, gmin, gmax=gmax, from_data=from_data)
 # initialize Grid Cell decoder and Pybullet Environment
 #visualize = True  # set this to True if you want a simulation window to open (requires computational power)
 ###changes by HAOYANG SUN-start
@@ -77,6 +138,8 @@ env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_optio
 pc_network = PlaceCellNetwork(from_data=from_data)
 # initialize Cognitive Map Model
 cognitive_map = CognitiveMapNetwork(dt, from_data=from_data)
+if bc_enabled:
+    bc_list = BlockCellList(from_data=from_data)
 
 if from_data:
     idx = np.argmax(cognitive_map.reward_cells)
@@ -164,6 +227,7 @@ def animation_frame(frame):
 
         # place cell network track gc firing
         goal_distance = np.linalg.norm(env.xy_coordinates[-1] - env.goal_location)
+
         #print("current goal location is: ", env.goal_location)
         reward = 1 if goal_distance < 0.1 else 0
         reward_first_found = False
@@ -174,6 +238,10 @@ def animation_frame(frame):
 
         [firing_values, created_new_pc, PC_idx] = pc_network.track_movement(gc_network.gc_modules, reward_first_found, generate_new_PC=construct_new_cognitive_map)
 
+        #Block Cell List Track Movements:
+        if bc_enabled:
+            if i % 15 ==0:
+                [created_new_bc, bc_coordinate] = bc_list.track_movement(gc_network, env)
 
 
         if created_new_pc:
@@ -255,6 +323,7 @@ else:
     # Save place network and cognitive map to reload it later
     pc_network.save_pc_network()  # provide filename="_navigation" to avoid overwriting the exploration phase
     cognitive_map.save_cognitive_map()  # provide filename="_navigation" to avoid overwriting the exploration phase
+    bc_list.save_bc_list()
 
     # Calculate the distance between goal and actual end position (only relevant for navigation phase)
     error = np.linalg.norm((env.xy_coordinates[-1] + env.goal_vector) - env.goal_location)

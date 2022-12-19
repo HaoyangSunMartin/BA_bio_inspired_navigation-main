@@ -1,8 +1,104 @@
+import math
 
 from plotting.plotThesis import plot_grid_cell_modules, plot_3D_sheets
 import numpy as np
 import os
+from numba import cuda
+import numba.cuda
+from numba import jit
 ###?
+"""
+here is the CUDA Implementation of the grid cell module:
+"""
+
+@cuda.jit
+def calculate_distance_CUDA(dimension, dis_matrix, de):
+    #xx,yy is the absolute distance of the two dimensions in the neuron sheet
+    xx,yy = dimension
+    #make the distance between the edge neurons be one in the wrap around fashion
+    xx= xx+1
+    yy= yy+1
+
+    x, y = cuda.grid(2)
+    if x < dis_matrix.shape[0] and y< dis_matrix.shape[1]:
+        #this thread corresponds to the calculation between neuron A(ax,ay) and B(bx,by)
+        ax = x % xx
+        ay = math.floor(x / xx)
+        bx = y % xx
+        by =math.floor(y / xx)
+        #get the preferred heading:
+        p = 2*(ay % 2)+ ax % 2
+        #tune the coordinate according to the preferred direction:
+        # [[-1, 0], [0, 1], [0, -1], [1, 0]]  # [W, N, S, E]
+        if p ==0:
+            ax = ax-de
+        if p ==1:
+            ay = ay+de
+        if p ==2:
+            ay = ay-de
+        if p ==3:
+            ax = ax+de
+        #calculate the absolute distance between A and B in a Wrap Around manner
+        dx = abs(ax - bx)
+        if dx > (xx * 0.5):
+            dx = xx - dx
+        dy = abs(ay - by)
+        if dy > (yy * 0.5):
+            dy = yy - dy
+        #write the distance to the matrix
+        dis_matrix[x,y] = (dx*dx) + (dy*dy)
+
+@cuda.jit
+def rec_d_CUDA(dis_matrix, r, lamda):
+    x,y = cuda.grid(2)
+    beta = 3 / (lamda*lamda)
+    if x < dis_matrix.shape[0] and y < dis_matrix.shape[1]:
+        dis_matrix[x,y] = np.exp(-1*r*dis_matrix[x,y]) - np.exp(-1*beta*dis_matrix[x,y])
+
+@cuda.jit
+def update_GC_CUDA(w_matrix, s_vector, movement, gm ,de):
+    #this function uses the weight matrix stored in the constant memory of the GPU
+    #and the current s_vector and the movement vector to calculate the next s_vector of the GC module
+    x, y  = cuda.grid(2)
+    if x < s_vector.shape[0] and y < s_vector.shape[1]:
+        #the thread [x,y] is responsible for updating the neuron A[x,y]
+        gidx = x + y*s_vector.shape[0]
+        tmp = 0
+        #get the preferred direction
+        p = 2 * (y % 2) + x % 2
+        dire = np.array([0,0])
+        # tune the coordinate according to the preferred direction:
+        # [[-1, 0], [0, 1], [0, -1], [1, 0]]  # [W, N, S, E]
+        if p == 0:
+            dire = np.array([-1*de, 0])
+        if p == 1:
+            dire = np.array([0, de])
+        if p == 2:
+            dire = np.array([0, -1*de])
+        if p == 3:
+            dire = np.array([de, 0])
+        for idx in range(w_matrix.shape[1]):
+            xx = idx % s_vector.shape[0]
+            yy = math.floor(idx / s_vector.shape[0])
+            tmp = tmp + s_vector[xx, yy] * w_matrix[gidx, idx]
+        B = 1+ 0.10315*gm*np.dot(dire, movement)
+        tmp = tmp + B
+        tmp = max(0, tmp)
+        cuda.syncthreads()
+        s_vector[x,y] = tmp
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###?
 # Grid Cell model is based on Edvardsen 2015. Please refer to the thesis or the paper for detailed explanations
@@ -64,6 +160,9 @@ def ds_dt(t, s, w, b, tau):
     return (f - s) / tau
 
 
+
+
+
 class GridCellModule:
     """One GridCellModule holds the information of a sheet of n x n neurons"""
     def __init__(self, n, gm, dt, data=None):
@@ -77,7 +176,8 @@ class GridCellModule:
         self.w = np.random.random_sample((array_length, array_length))
 
         # self.h = np.random.random_sample((array_length, 2))
-        self.s = np.random.rand(array_length) * 10**-4  # firing vector of size (n^2 x 1); random firing at beginning
+        #self.s = np.random.rand(array_length) * 10**-4  # firing vector of size (n^2 x 1); random firing at beginning
+        self.s = np.zeros(array_length) * 10 ** -4
         self.t = self.s  # target grid cell firing (of goal or home-base)
         self.s_virtual = self.s  # used for linear lookahead to preplay trajectories, without actually moving
         self.dt = dt  # time step size
@@ -96,6 +196,15 @@ class GridCellModule:
             index = 2 * np.mod(y, 2) + np.mod(x, 2)  # refer to thesis for explanation of formula
             index.astype(int)
             self.h = np.take(headings, index, axis=0)  # pick preferred heading direction for each neuron
+            """
+            for 4x4 grid the heading would be:
+              3 S  E  S  E
+            y 2 W  N  W  N
+              1 S  E  S  E
+              0 W  N  W  N
+                0  1  2  3
+                   x
+            """
 
             x_tuned = np.subtract(x, self.h[:, 0])  # tune x vector according to preferred heading direction
             y_tuned = np.subtract(y, self.h[:, 1])  # tune y vector according to preferred heading direction
@@ -107,7 +216,10 @@ class GridCellModule:
         else:
             self.w = data["w"]
             self.h = data["h"]
-
+    def get_s(self, virtual = False):
+        if virtual:
+            return self.s_virtual
+        return self.s
     def update_s(self, v, virtual=False, dt_alternative=None):
         """Updates grid cell spiking from one to next time step"""
 
@@ -159,7 +271,7 @@ class GridCellNetwork:
                 self.gc_modules.append(gc)
                 print("Created GC module with gm", gc.gm)
             self.save_gc_model()
-            nr_steps_init = 1000
+            nr_steps_init = 2000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
         else:
             # Load previous data
@@ -185,15 +297,16 @@ class GridCellNetwork:
     def initialize_network(self, nr_steps, filename):
         """For each grid cell module initialize spiking"""
         xy_speed = [0, 0]
+        xy_speed_array = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
+        nr = math.floor(nr_steps / 4)
         for i in range(nr_steps):
-            if np.random.random() > 0.95:
-                # Apply a small velocity vector in some cases to ensure that peaks form
-                xy_speed = np.random.rand(2) * 0.2
-            self.track_movement(xy_speed)
-            if i % 50 == 0:
+            if i % nr == 0:
                 print("Currently at Timestep:", i)
-                # plot_grid_cell_modules(self.gc_modules, i)
-                # plot_3D_sheets(self.gc_modules, i)
+                plot_3D_sheets(self.gc_modules, i)
+
+            # print("Currently at Timestep:", i)
+            xy_speed = xy_speed_array[math.floor(i / nr)]
+            self.track_movement(xy_speed)
         print("Finished Initialization of nr_steps:", nr_steps)
         plot_grid_cell_modules(self.gc_modules, nr_steps)
         plot_3D_sheets(self.gc_modules, nr_steps)

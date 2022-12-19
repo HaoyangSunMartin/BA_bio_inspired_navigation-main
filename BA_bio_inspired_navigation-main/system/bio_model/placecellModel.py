@@ -178,7 +178,9 @@ class PlaceCellNetwork:
         np.save("data/pc_model/gc_connections" + filename + ".npy", gc_connections)
         np.save("data/pc_model/env_coordinates" + filename + ".npy", env_coordinates)
 
+
 ###changes by Haoyang Sun-start
+
 class BlockCell:
     """Class to keep track of an individual Block Cell"""
     def __init__(self, gc_connections):
@@ -240,6 +242,119 @@ class BlockCell:
             self.plotted_found[axis] = True
 
         return firing
+class BlockCellList:
+    """A PlaceCellNetwork holds information about all Place Cells"""
+
+    def __init__(self):
+        self.block_cells = []  # array of block cells(all isolated)
+        self.threshold = 0.85
+    def create_new_bc(self, gc_modules):
+        # Consolidate grid cell spiking vectors to matrix of size n^2 x M
+        s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
+        for m, gc in enumerate(gc_modules):
+            s_vectors[m] = gc.s
+        weights = compute_weights(s_vectors)
+        bc = BlockCell(weights)
+        self.block_cells.append(bc)
+
+    ###changes by Haoyang Sun - start
+    def check_current_BC(self, gc_modules):
+
+        firing_values = self.compute_firing_values(gc_modules)
+        if len(firing_values) == 0:
+            return -1
+        max_firing = max(firing_values)
+        idx = firing_values.index(max_firing)
+        if max_firing < self.threshold:
+            return -1
+        else:
+            return idx
+
+    ###changes by Haoyang Sun - end
+
+    def track_movement(self, gc_network,env, generate_BC=False):
+        """Keeps track of current grid cell firing"""
+        gc_modules = gc_network.gc_modules
+        ##get the obstacle datas from the environment module
+        dire_vectors = env.get_blocked_directions()
+        gc_network.reset_s_virtual()
+        created_new_bc = False
+        for n, vector in enumerate(dire_vectors):
+            vector = np.multiply(vector,[0.5,0.5])
+            gc_network.track_movement(vector, virtual=True, dt_alternative=2)
+            firing_values = self.compute_firing_values(gc_network.gc_modules, virtual=True)
+            # create a new block cell if there is no block cell present there
+            if max(firing_values) < self.threshold:
+                self.create_new_bc(gc_modules)
+                created_new_bc = True
+            gc_network.reset_s_virtual()
+
+
+
+
+
+
+        ##firt get the blocked directions from the environment module
+
+        ###changes by Haoyang Sun - start
+        current_PC = self.check_current_PC(gc_modules)
+        if generate_new_PC == False:
+            return [firing_values, False, current_PC]
+        ###changes by Haoyang Sun - end
+
+        # if len(firing_values) == 0 or np.max(firing_values) < 0.85 or reward_first_found:
+        if current_PC == -1 or reward_first_found:
+            # No place cell shows significant excitement
+            # If the random number is above a threshold a new pc is created
+            self.create_new_bc(gc_modules)
+            firing_values.append(1)
+            creation_str = "Created new place cell with idx: " + str(len(self.block_cells) - 1) \
+                           + " | Highest alternative spiking value: " + str(np.max(firing_values))
+            # print(creation_str)
+            # if reward_first_found:
+            #     print("Found the goal and created place cell")
+            created_new_pc = True
+            ###changes by Haoyang Sun - start
+            current_PC = len(self.place_cells) - 1
+        ###changes by Haoyang Sun - end
+
+        return [firing_values, created_new_pc, current_PC]
+
+    def compute_firing_values(self, gc_modules, virtual=False, axis=None, plot=False):
+
+        s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
+        # Consolidate grid cell spiking vectors that we want to consider
+        for m, gc in enumerate(gc_modules):
+            if virtual:
+                s_vectors[m] = gc.s_virtual
+            else:
+                s_vectors[m] = gc.s
+
+        firing_values = []
+        for i, bc in enumerate(self.block_cells):
+            if axis is not None:
+                plot = plot if i == 0 else False  # linear lookahead debugging plotting
+                firing = bc.compute_firing_2x(s_vectors, axis, plot=plot)  # firing along axis
+            else:
+                firing = bc.compute_firing(s_vectors)  # overall firing
+
+            firing_values.append(firing)
+        return firing_values
+
+    def save_pc_network(self, filename=""):
+        gc_connections = []
+        env_coordinates = []
+        for pc in self.place_cells:
+            gc_connections.append(pc.gc_connections)
+            env_coordinates.append(pc.env_coordinates)
+
+        directory = "data/pc_model/"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        np.save("data/pc_model/gc_connections" + filename + ".npy", gc_connections)
+        np.save("data/pc_model/env_coordinates" + filename + ".npy", env_coordinates)
+
 ###changes by Haoyang Sun-end
 
 
