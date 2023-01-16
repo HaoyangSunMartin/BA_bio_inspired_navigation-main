@@ -91,12 +91,22 @@ class PlaceCellNetwork:
 
     def create_new_pc(self, gc_modules):
         # Consolidate grid cell spiking vectors to matrix of size n^2 x M
-        s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
-        for m, gc in enumerate(gc_modules):
-            s_vectors[m] = gc.s
-        weights = compute_weights(s_vectors)
-        pc = PlaceCell(weights)
-        self.place_cells.append(pc)
+        if gc_modules[0].CUDA:
+            s_vectors = np.empty((len(gc_modules), gc_modules[0].sheetDimension[0]*gc_modules[0].sheetDimension[1]))
+            for m, gc in enumerate(gc_modules):
+                s_vectors[m] = gc.get_s().flatten()
+            weights = compute_weights(s_vectors)
+            pc = PlaceCell(weights)
+            self.place_cells.append(pc)
+        else:
+            s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
+            for m, gc in enumerate(gc_modules):
+                s_vectors[m] = gc.s
+            weights = compute_weights(s_vectors)
+            pc = PlaceCell(weights)
+            self.place_cells.append(pc)
+
+
 
     ###changes by Haoyang Sun - start
     def check_current_PC(self, gc_modules):
@@ -143,26 +153,42 @@ class PlaceCellNetwork:
         return [firing_values, created_new_pc, current_PC]
 
     def compute_firing_values(self, gc_modules, virtual=False, axis=None, plot=False):
+        if gc_modules[0].CUDA:
 
-        s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
+            s_vectors = np.empty((len(gc_modules), gc_modules[0].sheetDimension[0]*gc_modules[0].sheetDimension[1]))
+            for m, gc in enumerate(gc_modules):
+                s_vectors[m] = gc.get_s(virtual= virtual).flatten()
+            firing_values = []
+            for i, pc in enumerate(self.place_cells):
+                if axis is not None:
+                    plot = plot if i == 0 else False  # linear lookahead debugging plotting
+                    firing = pc.compute_firing_2x(s_vectors, axis, plot=plot)  # firing along axis
+                else:
+                    firing = pc.compute_firing(s_vectors)  # overall firing
+
+                firing_values.append(firing)
+            return firing_values
+        else:
+            s_vectors = np.empty((len(gc_modules), len(gc_modules[0].s)))
+            for m, gc in enumerate(gc_modules):
+                if virtual:
+                    s_vectors[m] = gc.s_virtual
+                else:
+                    s_vectors[m] = gc.s
+
+            firing_values = []
+            for i, pc in enumerate(self.place_cells):
+                if axis is not None:
+                    plot = plot if i == 0 else False  # linear lookahead debugging plotting
+                    firing = pc.compute_firing_2x(s_vectors, axis, plot=plot)  # firing along axis
+                else:
+                    firing = pc.compute_firing(s_vectors)  # overall firing
+
+                firing_values.append(firing)
+            return firing_values
+
         # Consolidate grid cell spiking vectors that we want to consider
-        for m, gc in enumerate(gc_modules):
-            if virtual:
-                s_vectors[m] = gc.s_virtual
-            else:
-                s_vectors[m] = gc.s
 
-        firing_values = []
-        for i, pc in enumerate(self.place_cells):
-            if axis is not None:
-                plot = plot if i == 0 else False  # linear lookahead debugging plotting
-                firing = pc.compute_firing_2x(s_vectors, axis, plot=plot)  # firing along axis
-            else:
-                firing = pc.compute_firing(s_vectors)  # overall firing
-
-
-            firing_values.append(firing)
-        return firing_values
 
     def save_pc_network(self, filename=""):
         gc_connections = []

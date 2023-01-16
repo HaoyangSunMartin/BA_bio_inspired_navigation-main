@@ -331,7 +331,7 @@ def plot_mean_squared_error(mse_dict):
 
 
 # --------------- Plot cognitive map ---------------
-def cognitive_map_plot(pc_network, cognitive_map, vectors_array=None, env_coding="plane"):
+def cognitive_map_plot(pc_network, cognitive_map, vectors_array=None, env_coding="plane", center_block = False):
 
     plt.figure()
 
@@ -344,7 +344,7 @@ def cognitive_map_plot(pc_network, cognitive_map, vectors_array=None, env_coding
                        angles='xy', scale_units='xy', scale=1)
 
     # Plot obstacles
-    add_environment(ax,env_coding)
+    add_environment(ax,env_coding, center_block= center_block )
     plt.axis('square')
     plt.xlim(-0.5, 11.5)
     plt.ylim(-0.5, 11.5)
@@ -380,6 +380,8 @@ def add_cognitive_map(ax, pc_network, cognitive_map):
                             ec=TUM_colors['TUMGray'], linewidth=0)
         ax.add_artist(circle)
 
+
+
 def add_block_cells(ax, bc_list):
     for i, bc in enumerate(bc_list.block_cells):
 
@@ -392,12 +394,38 @@ def add_block_cells(ax, bc_list):
         ###changes by Haoyang Sun--End
         ax.plot(x_coord, y_coord, 'r+')
 
+def add_cells_firing_map(ax,pc_network, cognitive_map, firing_vector ):
+    for i, pc in enumerate(pc_network.place_cells):
+
+        for j, connection in enumerate(cognitive_map.topology_cells[i]):
+            if connection == 1 and i != j:
+                x_values = [pc.env_coordinates[0], pc_network.place_cells[j].env_coordinates[0]]
+                y_values = [pc.env_coordinates[1], pc_network.place_cells[j].env_coordinates[1]]
+                ax.plot(x_values, y_values, color=TUM_colors['TUMGray'], alpha=0.2)
+        ###changes by Haoyang Sun--Start
+        #annotate the place cells with their firing values
+        x_coord, y_coord = pc.env_coordinates
+        ax.text(x_coord,y_coord, str(firing_vector[i]), fontsize=10)
+        ###changes by Haoyang Sun--End
+
+        circle = plt.Circle((pc.env_coordinates[0], pc.env_coordinates[1]), 0.5,
+                            fc=TUM_colors['TUMBlue'], alpha=cognitive_map.reward_cells[i] * 0.6,
+                            ec=TUM_colors['TUMGray'], linewidth=0)
+        ax.add_artist(circle)
+        circle_border = plt.Circle((pc.env_coordinates[0], pc.env_coordinates[1]), 0.5,
+                                ec=TUM_colors['TUMGray'], fill=False, linewidth=0.3)
+        ax.add_artist(circle_border)
+
+        circle = plt.Circle((1.5, 10), 0.12,
+                            fc=TUM_colors['TUMBlue'],
+                            ec=TUM_colors['TUMGray'], linewidth=0)
+        ax.add_artist(circle)
 
 
 
 
 
-def add_environment(ax,env="plane"):
+def add_environment(ax, env="plane", center_block=False):
     dic = {
         "plane_doors"  : [1, 3, 5, 7],
         "plane_doors_1" : [3, 5, 7],
@@ -406,7 +434,11 @@ def add_environment(ax,env="plane"):
         "plane_doors_4" : [1, 3, 5],
         "plane_doors_5c_3o" : [1, 3, 7, 9],
         "plane" : [ ]
+
     }
+    if center_block:
+        plot_box = plt.Rectangle((2,2.5 ), 8, 1, color=TUM_colors['TUMLightGray'])
+        ax.add_artist(plot_box)
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
     for x in doors:
         plot_box = plt.Rectangle((x, 5.4), 1, 0.2, color=TUM_colors['TUMGray'])
@@ -434,7 +466,7 @@ def add_trajectory(ax, xy_coordinates):
 
 
 # --------------- Plot sub goal localization map ---------------
-def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename, env_coding="plane", chosen_idx=0, goal_spiking=None):
+def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, filename, env_coding="plane", chosen_idx=0, goal_spiking=None, center_block = False):
 
     plt.figure()
 
@@ -442,7 +474,7 @@ def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, file
 
     ax = plt.gca()
     add_cognitive_map(ax, pc_network, cognitive_map)
-    add_environment(ax,env_coding)
+    add_environment(ax,env_coding, center_block=center_block)
 
     initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
     ax.add_artist(initial)
@@ -495,7 +527,7 @@ def calculate_trajectory_distance(xy_coordinates):
 
 
 
-def plot_trajectory(xy_coordinates, door,env_coding="plane"):
+def plot_trajectory(xy_coordinates, door,env_coding="plane", center_block=False):
 
     # print("----- Trajectory " + door)
     #
@@ -508,7 +540,7 @@ def plot_trajectory(xy_coordinates, door,env_coding="plane"):
     plt.figure()
 
     ax = plt.gca()
-    add_environment(ax, env_coding)
+    add_environment(ax, env_coding, center_block=center_block)
 
     initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
     ax.add_artist(initial)
@@ -564,14 +596,14 @@ def plot_trajectory(xy_coordinates, door,env_coding="plane"):
     plt.close()
 
 
-def plot_cognitive_map(env, cognitive_map, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+def plot_cognitive_map(env, cognitive_map, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None, center_block=False):
     plt.figure()
 
     xy_coordinates = env.xy_coordinates
 
     ax = plt.gca()
     add_cognitive_map(ax, pc_network, cognitive_map)
-    add_environment(ax,env_coding)
+    add_environment(ax,env_coding,center_block=center_block)
 
     initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
     ax.add_artist(initial)
@@ -614,14 +646,14 @@ def plot_cognitive_map(env, cognitive_map, pc_network, goal_vector, filename,env
     plt.show()
     plt.close()
 
-def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None, center_block=False):
     plt.figure()
 
     #xy_coordinates = env.xy_coordinates
 
     ax = plt.gca()
     add_cognitive_map(ax, pc_network, cognitive_map)
-    add_environment(ax, env_coding)
+    add_environment(ax, env_coding, center_block=center_block)
     add_trajectory(ax,xy_coordinates)
 
 
@@ -666,24 +698,24 @@ def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_v
     plt.show()
     plt.close()
 
-def plot_block_cells_on_map(env, cognitive_map, bc_list, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+def plot_block_cells_on_map(env, cognitive_map, bc_list, goal_vector, filename,center_block=False,env_coding="plane", chosen_idx=0, goal_spiking=None):
     plt.figure()
 
     # xy_coordinates = env.xy_coordinates
 
     ax = plt.gca()
     add_block_cells(ax, bc_list)
-    add_environment(ax, env_coding)
+    add_environment(ax, env_coding, center_block=center_block)
 
 
-def plot_cognitive_map_with_bc(env, cognitive_map, bc_list, pc_network, goal_vector, filename,env_coding="plane", chosen_idx=0, goal_spiking=None):
+def plot_cognitive_map_with_bc(env, cognitive_map, bc_list, pc_network, goal_vector, filename,center_block=False,env_coding="plane", chosen_idx=0, goal_spiking=None):
     plt.figure()
 
     xy_coordinates = env.xy_coordinates
 
     ax = plt.gca()
     add_cognitive_map(ax, pc_network, cognitive_map)
-    add_environment(ax, env_coding)
+    add_environment(ax, env_coding,center_block=center_block)
     add_block_cells(ax, bc_list)
 
     initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
@@ -726,11 +758,11 @@ def plot_cognitive_map_with_bc(env, cognitive_map, bc_list, pc_network, goal_vec
     plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
     plt.show()
     plt.close()
-def plot_env_map_with_bc(bc_list,env, env_coding="plane"):
+def plot_env_map_with_bc(bc_list,env, center_block=False,env_coding="plane"):
     plt.figure()
 
     ax = plt.gca()
-    add_environment(ax, env_coding)
+    add_environment(ax, env_coding, center_block= center_block)
     add_block_cells(ax, bc_list)
 
     current_position = env.xy_coordinates[-1]

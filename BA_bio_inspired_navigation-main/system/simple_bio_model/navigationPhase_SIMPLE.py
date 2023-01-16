@@ -1,4 +1,4 @@
-from system.decoder.linearLookahead import *
+from system.simple_bio_model.linearLookahead import *
 import numpy as np
 import system.helper as helper
 import time
@@ -54,8 +54,8 @@ def find_new_goal_vector(gc_network, pc_network, cognitive_map, env,
         env.goal_vector = pod.compute_goal_vector(gc_network.gc_modules)
     else:
         goal_pc_idx = np.argmax(cognitive_map.reward_cells)  # pick which pc to look for (reduces computational effort)
-
         print("identifying PC Nr.", goal_pc_idx, " as goal")
+
         start = time.time()
         env.goal_vector = perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env,
                                                 goal_pc_idx=goal_pc_idx, video=video, plotting=plot)

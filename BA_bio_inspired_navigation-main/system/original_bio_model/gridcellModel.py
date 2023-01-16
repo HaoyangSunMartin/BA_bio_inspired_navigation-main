@@ -166,7 +166,7 @@ def ds_dt(t, s, w, b, tau):
 class GridCellModule:
     """One GridCellModule holds the information of a sheet of n x n neurons"""
     def __init__(self, n, gm, dt, data=None):
-
+        self.CUDA = False
         self.n = n  # Grid Cell sheet size (height and width)
         self.gm = gm  # velocity gain factor
 
@@ -297,16 +297,15 @@ class GridCellNetwork:
     def initialize_network(self, nr_steps, filename):
         """For each grid cell module initialize spiking"""
         xy_speed = [0, 0]
-        xy_speed_array = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
-        nr = math.floor(nr_steps / 4)
         for i in range(nr_steps):
-            if i % nr == 0:
-                print("Currently at Timestep:", i)
-                plot_3D_sheets(self.gc_modules, i)
-
-            # print("Currently at Timestep:", i)
-            xy_speed = xy_speed_array[math.floor(i / nr)]
+            if np.random.random() > 0.95:
+                # Apply a small velocity vector in some cases to ensure that peaks form
+                xy_speed = np.random.rand(2) * 0.2
             self.track_movement(xy_speed)
+            #if i % 499 == 0:
+                #print("Currently at Timestep:", i)
+                # plot_grid_cell_modules(self.gc_modules, i)
+                #plot_3D_sheets(self.gc_modules, i)
         print("Finished Initialization of nr_steps:", nr_steps)
         plot_grid_cell_modules(self.gc_modules, nr_steps)
         plot_3D_sheets(self.gc_modules, nr_steps)

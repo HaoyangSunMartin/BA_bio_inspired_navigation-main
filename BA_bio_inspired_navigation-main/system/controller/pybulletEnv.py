@@ -11,7 +11,7 @@ from system.controller.navigationPhase import pick_intermediate_goal_vector, fin
 
 class PybulletEnvironment:
     """This class deals with everything pybullet or environment (obstacles) related"""
-    def __init__(self, visualize, env_model, dt, pod=None, doors_option = "plane"):
+    def __init__(self, visualize, env_model, dt, pod=None, doors_option = "plane", center_block = False):
         self.visualize = visualize  # to open JAVA application
         self.env_model = env_model  # string specifying env_model
         self.pod = pod  # if Phase Offset detectors are used
@@ -38,7 +38,11 @@ class PybulletEnvironment:
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane"
             ###Changes by Haoyang Sun - END
-            p.loadURDF("environment/linear_sunburst_map/" + doors_option + ".urdf")
+            if center_block:
+                doors_optionReal = "plane_doors_center_block"
+            else:
+                doors_optionReal = doors_option
+            p.loadURDF("environment/linear_sunburst_map/" + doors_optionReal + ".urdf")
             base_position = [5.5, 0.55, 0.02]
             arena_size = 15
             goal_location = np.array([1.5, 10])

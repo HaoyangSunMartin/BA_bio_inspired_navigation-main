@@ -1,23 +1,24 @@
-import numpy
-
 from system.controller.pybulletEnv import PybulletEnvironment
 from plotting.plotResults import *
 from plotting.plotThesis import *
-from system.bio_model.gridcellModel import GridCellNetwork
-from system.bio_model.gridcellModel_CUDA import GridCellNetwork_CUDA
+from system.original_bio_model.gridcellModel import GridCellNetwork
+from system.original_bio_model.gridcellModel_CUDA import GridCellNetwork_CUDA
 
-from system.bio_model.blockcellModel import BlockCellList
+from system.original_bio_model.blockcellModel import BlockCellList
 from system.decoder.phaseOffsetDetector import PhaseOffsetDetectorNetwork
 from system.decoder.spikeDetection import SpikeDetector
-from system.bio_model.placecellModel import PlaceCellNetwork
-from system.bio_model.cognitivemapModel import CognitiveMapNetwork
+from system.original_bio_model.placecellModel import PlaceCellNetwork
+from system.original_bio_model.cognitivemapModel import CognitiveMapNetwork
 
 from system.controller.explorationPhase import compute_exploration_goal_vector
 from system.controller.explorationPhase import get_exploration_trajectory
 from system.controller.navigationPhase import compute_navigation_goal_vector
-from system.controller.navigationPhase import conventional_method
 from system.controller.navigationPhase import conventional_method_A_star
 from system.controller.navigationPhase import get_trajectory_from_place_cell
+
+
+from system.simple_bio_model.model_interface_SIMPLE import Bio_Model_SIMPLE
+from system.original_bio_model.model_interface import Bio_Model
 
 import os
 import matplotlib.animation as animation
@@ -25,54 +26,8 @@ import matplotlib as mpl
 import numpy as np
 import system.helper as helper
 import time
-from numba import cuda
-import math
+
 #####Testing Ground For Python-start
-
-"""
-cuda.detect()
-cuda.select_device(0)
-
-@cuda.jit
-def increment_a_2D_array(an_array):
-    x, y = cuda.grid(2)
-    if x < an_array.shape[0] and y < an_array.shape[1]:
-       an_array[x, y] = an_array[x,y] + 2
-@cuda.jit
-def increment_a_2D_array2(an_array):
-    x, y = cuda.grid(2)
-    if x < an_array.shape[0] and y < an_array.shape[1]:
-       an_array[x, y] = an_array[x,y] + 20
-
-an_array = np.ones((1600,1600))
-threadsperblock = (32, 32)
-blockspergrid_x = math.ceil(an_array.shape[0] / threadsperblock[0])
-blockspergrid_y = math.ceil(an_array.shape[1] / threadsperblock[1])
-blockspergrid = (blockspergrid_x, blockspergrid_y)
-print(blockspergrid)
-g_array = cuda.to_device(an_array)
-increment_a_2D_array[blockspergrid, threadsperblock](g_array)
-increment_a_2D_array2[blockspergrid, threadsperblock](g_array)
-print(g_array.copy_to_host())
-
-
-
-
-
-headings = [[-1, 0], [0, 1], [0, -1], [1, 0]] # [W, N, S, E]
-
-grid = np.indices((5, 5))  # grid function to create x and y vectors
-x = np.concatenate(grid[1])  # x vector of form eg. [0, 0, 0, 1, 1, 1, 2, 2, 2]
-y = np.concatenate(grid[0])  # y vector of form eg. [0, 1, 2, 0, 1, 2, 0, 1, 2]
-index = 2 * np.mod(y, 2) + np.mod(x, 2)  # refer to thesis for explanation of formula
-index.astype(int)
-h = np.take(headings, index, axis=0)
-
-
-vector = [0.5,0.8]
-vector = numpy.multiply(vector,[0.5,0.5])
-print(vector)
-"""
 
 
 
@@ -86,22 +41,34 @@ print(helper.timer4LinearLookAhead)
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-from_data = False
-use_CUDA = False
-bc_enabled =False
-nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
-#nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
-nr_steps_exploration = 0
+SIMPLE = False
+Conventional = None
 
-construct_new_cognitive_map = False
+visualize = False
+from_data = True
+use_CUDA = True
+bc_enabled =False
+nr_steps = 15000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+#nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
+nr_steps_exploration = nr_steps
+
+
+construct_new_cognitive_map = True
 
 conventional = False
 
-goal_idx = 27
+goal_idx = 255
 
-env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
+center_block = False
+
+if SIMPLE:
+    model = Bio_Model_SIMPLE()
+else:
+    model = Bio_Model()
+
 # set time-step size of simulation
 dt = 1e-2  # in seconds, use 1e-2 for sufficient results
 
@@ -109,16 +76,18 @@ dt = 1e-2  # in seconds, use 1e-2 for sufficient results
 M = 6  # 6 for default, number of modules
 n = 40  # 40 for default, size of sheet -> nr of neurons is squared
 gmin = 0.2  # 0.2 for default, maximum arena size, 0.5 -> ~10m | 0.05 -> ~105m
-gmax = 2.4  # 2.4 for default, determines resolution, dont pick to high (>2.4 at speed = 0.5m/s)
+gmax = 2.4 # 2.4 for default, determines resolution, dont pick to high (>2.4 at speed = 0.5m/s)
 # note that if gc modules are created from data n and M are overwritten
 if use_CUDA:
     gc_network = GridCellNetwork_CUDA(n, M, dt, gmin, gmax=gmax, from_data=from_data)
 else:
     gc_network = GridCellNetwork(n, M, dt, gmin, gmax=gmax, from_data=from_data)
+
+
 # initialize Grid Cell decoder and Pybullet Environment
 #visualize = True  # set this to True if you want a simulation window to open (requires computational power)
 ###changes by HAOYANG SUN-start
-visualize = False
+visualize = visualize
 ###changes by HAOYANG SUN-end
 env_model = "linear_sunburst"  # "plane" for default, "single_line_traversal", "linear_sunburst"
 vector_model = "linear_lookahead"  # "linear_lookahead" for default, "phase_offset_detector", "spike_detection"
@@ -127,7 +96,7 @@ env_coding = env_coding
 pod_network = PhaseOffsetDetectorNetwork(16, 9, n) if vector_model == "phase_offset_detector" else None
 spike_detector = SpikeDetector() if vector_model == "spike_detection" else None
 
-env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_option=env_coding)
+env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_option=env_coding, center_block=center_block)
 
 #from_data = False  # False for default, set to True if you want to load cognitive map data to the model
 ###changes by HAOYANG SUN-start
@@ -138,6 +107,8 @@ env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_optio
 pc_network = PlaceCellNetwork(from_data=from_data)
 # initialize Cognitive Map Model
 cognitive_map = CognitiveMapNetwork(dt, from_data=from_data)
+
+
 if bc_enabled:
     bc_list = BlockCellList(from_data=from_data)
 
@@ -155,11 +126,11 @@ if conventional:
     print("using the conventional approach, the pc_path is:", pc_path)
     print("using the conventional approach, the traveled distance is:", conven_dist)
     plot_trajectory_on_map(conven_tra, env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
-                           env_coding=env_coding)
+                           env_coding=env_coding,center_block=center_block)
 if construct_new_cognitive_map:
     plot_trajectory_on_map(get_exploration_trajectory(), env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
-                           env_coding=env_coding)
-plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map",env_coding=env_coding)
+                           env_coding=env_coding,center_block=center_block)
+plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map",env_coding=env_coding,center_block=center_block)
 ###changes by Haoyang Sun-end
 
 # run simulation
@@ -186,103 +157,13 @@ else:
 
 plot_matching_vectors = False  # False for default, True if you want to match spikes in the grid cel spiking plots
 
-# Save across frames
-goal_vector_array = [np.array([0, 0])]  # array to save the calculated goal vector
+model = Bio_Model(construct_new_cognitive_map=construct_new_cognitive_map,goal_idx=goal_idx,nr_steps_exploration=nr_steps_exploration,nr_steps=nr_steps,video=video,gc_network=gc_network, pc_network = pc_network, cognitive_map = cognitive_map,env=env)
 
-### Start of Animation_Frame function
-# this function performs the simulation steps and is called by video creator or manually
-def animation_frame(frame):
-    if video:
-        # calculate how many simulations steps to do for current frame
-        start = frame - step
-        end = frame
-        if start < 0:
-            start = 0
-    else:
-        # run through all simulation steps as no frames have to be exported
-        start = 0
-        end = frame
-
-    for i in range(start, end):
-
-        # perform one simulation step
-
-        # compute goal vector
-        exploration_phase = True if i < nr_steps_exploration else False
-        # compute the goal_vector from rodent to goal in global coordinate system
-        if exploration_phase:
-            compute_exploration_goal_vector(env, i)
-        else:
-            compute_navigation_goal_vector(gc_network, pc_network, cognitive_map, i - nr_steps_exploration, env,
-                                           pod=pod_network, spike_detector=spike_detector, model=vector_model)
-        goal_vector_array.append(env.goal_vector)
-
-
-        # compute velocity vector
-        env.compute_movement(gc_network, pc_network, cognitive_map, exploration_phase=exploration_phase)
-        xy_speed = env.xy_speeds[-1]
-
-        # grid cell network track movement
-        gc_network.track_movement(xy_speed)
-
-        # place cell network track gc firing
-        goal_distance = np.linalg.norm(env.xy_coordinates[-1] - env.goal_location)
-
-        #print("current goal location is: ", env.goal_location)
-        reward = 1 if goal_distance < 0.1 else 0
-        reward_first_found = False
-        if reward == 1 and (len(cognitive_map.reward_cells) == 0 or np.max(cognitive_map.reward_cells) != 1):
-            reward_first_found = True
-            gc_network.set_current_as_target_state()
-
-
-        [firing_values, created_new_pc, PC_idx] = pc_network.track_movement(gc_network.gc_modules, reward_first_found, generate_new_PC=construct_new_cognitive_map)
-
-        #Block Cell List Track Movements:
-        if bc_enabled:
-            if i % 15 ==0:
-                [created_new_bc, bc_coordinate] = bc_list.track_movement(gc_network, env)
-
-
-        if created_new_pc:
-            pc_network.place_cells[-1].env_coordinates = np.array(env.xy_coordinates[-1])
-
-        ###changes by Haoyang Sun - start
-        if len(env.visited_PCs) ==0 or env.visited_PCs[-1] != PC_idx:
-            env.visited_PCs.append(PC_idx)
-            print("the visited PCs are: ", env.visited_PCs)
-
-        ###changes by Haoyang Sun - end
-
-        # cognitive map track pc firing
-        cognitive_map.track_movement(firing_values, created_new_pc, reward)
-        ###changes by Haoyang Sun-start
-        ##if the robot has reached the goal, end the simulation
-        if goal_idx in env.visited_PCs:
-            break
-        ###changes by Haoyang Sun-end
-        # plot or print intermediate update in console
-        if not video and i % int(nr_steps / nr_plots) == 0:
-            progress_str = "Progress: " + str(int(i * 100 / nr_steps)) + "%"
-            print(progress_str)
-            # plotCurrentAndTarget(gc_network.gc_modules)
-
-    # simulated steps until next frame
-    if video:
-        # export current state as frame
-        exploration_phase = True if frame < nr_steps_exploration else False
-        plot_current_state(env, gc_network.gc_modules, f_gc, f_t, f_mon,
-                           pc_network=pc_network, cognitive_map=cognitive_map,
-                           exploration_phase=exploration_phase, goal_vector=goal_vector_array[-1])
-        progress_str = "Progress: " + str(int((frame * 100) / nr_steps)) + "% | Current video is: " + str(
-            frame * dt) + "s long"
-        print(progress_str)
-### End of Animation_Frame function
 
 if video:
     # initialize video and call simulation function within
     frames = np.arange(0, nr_steps, step)
-    anim = animation.FuncAnimation(fig, func=animation_frame, frames=frames, interval=1 / fps, blit=False)
+    anim = animation.FuncAnimation(fig, func=model.animation_frame, frames=frames, interval=1 / fps, blit=False)
 
     # Finished simulation
 
@@ -302,7 +183,7 @@ else:
     startTimer = time.time()
     ###changed by Haoyang Sun--End
 
-    animation_frame(nr_steps)
+    model.animation_frame(nr_steps)
 
     ###changed by Haoyang Sun--Start
     endTimer = time.time()
@@ -323,7 +204,7 @@ else:
     # Save place network and cognitive map to reload it later
     pc_network.save_pc_network()  # provide filename="_navigation" to avoid overwriting the exploration phase
     cognitive_map.save_cognitive_map()  # provide filename="_navigation" to avoid overwriting the exploration phase
-    bc_list.save_bc_list()
+    #bc_list.save_bc_list()
 
     # Calculate the distance between goal and actual end position (only relevant for navigation phase)
     error = np.linalg.norm((env.xy_coordinates[-1] + env.goal_vector) - env.goal_location)
@@ -333,7 +214,7 @@ else:
     error_array = [error]
     gc_array = [gc_network.consolidate_gc_spiking()]
     position_array = [env.xy_coordinates]
-    vector_array = [goal_vector_array]
+    vector_array = [model.goal_vector_array]
 
     progress_str = "Progress: " + str(int(1 * 100 / nr_trials)) + "% | Latest error: " + str(error)
     print(progress_str)
@@ -347,7 +228,7 @@ else:
 
         goal_vector_array = [np.array([0, 0])]
 
-        animation_frame(nr_steps)
+        model.animation_frame(nr_steps)
         error = np.linalg.norm((env.xy_coordinates[-1] + env.goal_vector) - env.goal_location)
 
         error_array.append(error)

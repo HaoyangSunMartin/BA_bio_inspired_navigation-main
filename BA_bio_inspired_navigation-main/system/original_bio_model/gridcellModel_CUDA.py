@@ -59,7 +59,7 @@ def rec_d_CUDA(dis_matrix, r, lamda):
 
 
 @cuda.jit
-def update_GC_CUDA(w_matrix, s_vector, movement, gm, W, N, S, E, time_parameters):
+def update_GC_CUDA(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
     # this function uses the weight matrix stored in the constant memory of the GPU
     # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
     x, y = cuda.grid(2)
@@ -90,14 +90,15 @@ def update_GC_CUDA(w_matrix, s_vector, movement, gm, W, N, S, E, time_parameters
             yy = int(math.floor(idx / s_vector.shape[0]))
 
             tmp = tmp + s_vector[xx, yy] * w_matrix[gidx, idx]
-        tmp = tmp + (1 + 0.10315 * gm * (dire[0] * movement[0] + dire[1] * movement[1]))
+        tmp1 = dire[0] * x_movement + dire[1] * y_movement
+        tmp = tmp + 1.0 + 0.10315 * gm * tmp1
         tmp = max(0, tmp)
         tmp = (s_vector[x, y] + (tmp * dt / tau)) / (1 + (dt / tau))
         cuda.syncthreads()
         s_vector[x, y] = tmp
 
 @cuda.jit
-def update_GC_CUDA_Alternative(w_matrix, s_vector, movement, gm, W, N, S, E, time_parameters):
+def update_GC_CUDA_Alternative(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
     # this function uses the weight matrix stored in the constant memory of the GPU
     # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
     x, y = cuda.grid(2)
@@ -128,7 +129,7 @@ def update_GC_CUDA_Alternative(w_matrix, s_vector, movement, gm, W, N, S, E, tim
             yy = int(math.floor(idx / s_vector.shape[0]))
 
             tmp = tmp + s_vector[xx, yy] * w_matrix[gidx, idx]
-        tmp = tmp + (1 + 0.10315 * gm * (dire[0] * movement[0] + dire[1] * movement[1]))
+        tmp = tmp + (1 + 0.10315 * gm * (dire[0] * x_movement + dire[1] * y_movement))
         tmp = max(0, tmp)
         tmp = (s_vector[x, y] + (tmp * dt / tau)) / (1 + (dt / tau))
         cuda.syncthreads()
@@ -138,7 +139,8 @@ def update_GC_CUDA_Alternative(w_matrix, s_vector, movement, gm, W, N, S, E, tim
 
 
 class GridCellModule_CUDA:
-    def __init__(self, sheetDimension, dt, gm=0.2, de=0.2, r=1.05, lamda=15, tau=1e-1):
+    def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1):
+        self.CUDA = True
         self.sheetDimension = sheetDimension
         self.weightMatrixDimension = (
         self.sheetDimension[0] * self.sheetDimension[1], self.sheetDimension[0] * self.sheetDimension[1])
@@ -180,7 +182,7 @@ class GridCellModule_CUDA:
         ##
 
         # declare the CUDA Structure for weightMatrix Manipulation
-        self.threadsPerBlock = (32, 32)
+        self.threadsPerBlock = (8, 8)
         blocksPerGrid_x = math.ceil(self.weightMatrixDimension[0] / self.threadsPerBlock[0])
         blocksPerGrid_y = math.ceil(self.weightMatrixDimension[1] / self.threadsPerBlock[1])
         self.blocksPerGrid = (blocksPerGrid_x, blocksPerGrid_y)
@@ -207,24 +209,29 @@ class GridCellModule_CUDA:
     def update_s(self, xy_speed, virtual = False, dt_alternative = None):
         if self.virual==False and virtual==True:
             self.prepare_virtual()
+        if self.virual==True and virtual == False:
+            self.reset_s_virtual()
+        #print("updating the gridCell module with gm: ", self.gm," with movement: ", xy_speed )
         if dt_alternative is None:
+
             update_GC_CUDA[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                (self.d_weightMatrix, self.d_sVector, xy_speed, self.gm, self.W, self.N, self.S, self.E,
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
                  self.time_parameters)
         else:
             update_GC_CUDA_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock]\
-                (self.d_weightMatrix, self.d_sVector, xy_speed, self.gm, self.W, self.N, self.S, self.E,
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
                  self.time_parameters)
 
 
     #this function should be called every time the model switches to virtual updates
     def prepare_virtual(self):
         self.h_sVector = self.d_sVector.copy_to_host()
+        self.virual =True
 
     #this function ends the virtual update phase
     def reset_s_virtual(self):
         self.d_sVector = cuda.to_device(self.h_sVector)
-
+        self.virual = False
     def get_s(self, virtual = False):
         if self.virual:
             if virtual:
@@ -258,7 +265,7 @@ def compute_gm(m, M, gmin, gmax=None):
 class GridCellNetwork_CUDA:
     """GridCellNetwork holds all Grid Cell Modules"""
     def __init__(self, n, M, dt, gmin, gmax=None, from_data=False):
-
+        self.CUDA = True
         self.gc_modules = []  # array holding objects GridCellModule
         self.dt = dt
 
@@ -272,13 +279,14 @@ class GridCellNetwork_CUDA:
             self.save_gc_model()
             nr_steps_init = 1000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
+
         else:
             # Load previous data
             w_vectors = np.load("data/gc_model/w_vectors.npy")
             h_vectors = np.load("data/gc_model/h_vectors.npy")
             gm_values = np.load("data/gc_model/gm_values.npy")
-
-            n = int(np.sqrt(len(w_vectors[0][0])))
+            print(w_vectors.shape)
+            n = int(np.sqrt(np.sqrt(len(w_vectors[0]))))
             for m, gm in enumerate(gm_values):
                 gc = GridCellModule_CUDA((n,n), gm = gm, dt = dt)
                 gc.initializeWeightMatrix(data = {"w": w_vectors[m], "h": h_vectors[m]})
@@ -292,6 +300,7 @@ class GridCellNetwork_CUDA:
     def track_movement(self, xy_speed, virtual=False, dt_alternative=None):
         """For each grid cell module update spiking"""
         for gc in self.gc_modules:
+
             gc.update_s(xy_speed, virtual=virtual, dt_alternative=dt_alternative)
 
     def initialize_network(self, nr_steps, filename):
@@ -299,18 +308,19 @@ class GridCellNetwork_CUDA:
         for gc in self.gc_modules:
             gc.initializeWeightMatrix()
 
-        xy_speed_array = [np.array([1, 0]), np.array([0, 1]), np.array([-1, 0]), np.array([0, -1])]
+        xy_speed_array = [np.array([0.5, 0.0], dtype=np.double), np.array([0.0, 0.5], dtype=np.double), np.array([-0.5, 0.0], dtype=np.double), np.array([0.0, -0.5], dtype=np.double)]
         nr = math.floor(nr_steps / 4)
         for i in range(nr_steps):
-            if i % nr == 0:
-                print("Currently at Timestep:", i)
-                plot_3D_sheets(self.gc_modules, i)
+            #if i % nr == 0:
+                #print("Currently at Timestep:", i)
+                #plot_3D_sheets(self.gc_modules, i)
 
             #print("Currently at Timestep:", i)
             xy_speed = xy_speed_array[math.floor(i / nr)]
             self.track_movement(xy_speed)
-
-
+        for i in range(nr):
+            xy_speed = np.array([0.2, 0.2], dtype=np.double)
+            self.track_movement(xy_speed)
         print("Finished Initialization of nr_steps:", nr_steps)
         #plot_grid_cell_modules(self.gc_modules, nr_steps)
         plot_3D_sheets(self.gc_modules, nr_steps)
@@ -352,6 +362,7 @@ class GridCellNetwork_CUDA:
 
     def save_gc_spiking(self, filename):
         s_vectors = self.consolidate_gc_spiking()
+        print("saving the s_vectors with shape: ", s_vectors.shape)
 
         directory = "data/gc_model/"
         if not os.path.exists(directory):
@@ -377,3 +388,6 @@ class GridCellNetwork_CUDA:
         for m, gc in enumerate(self.gc_modules):
             gc.t = t_vectors[m]
         print("Set loaded data as new target state:", filename)
+
+    def plot_modules(self, nr_steps):
+        plot_3D_sheets(self.gc_modules, nr_steps)
