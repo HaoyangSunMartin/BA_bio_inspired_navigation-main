@@ -26,6 +26,10 @@ def compute_navigation_goal_vector(gc_network, pc_network, cognitive_map, nr_ste
 
     elif (not env.topology_based and distance_to_goal/distance_to_goal_original < update_fraction
           and distance_to_goal_original > 0.3) or nr_steps == 0:
+        print(distance_to_goal)
+        print(distance_to_goal_original)
+        print(distance_to_goal/distance_to_goal_original)
+        print(nr_steps)
         # Vector-based navigation and agent has traversed a large portion of the goal vector, it is recalculated
         ###changes by Haoyang Sun - start
         #env.goal_visited()

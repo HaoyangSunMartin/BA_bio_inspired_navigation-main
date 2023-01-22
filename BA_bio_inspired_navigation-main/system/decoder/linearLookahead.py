@@ -17,9 +17,9 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     ###
 
 
-    dt = gc_network.dt * 10  # checks spiking only every nth step
+    dt = gc_network.dt * 2  # checks spiking only every nth step
     speed = 0.5  # match actual speed
-    xy_speeds = np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed
+    xy_speeds = np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed# np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed
     goal_spiking = {}  # "axis": {"reward_value", "idx_place_cell", "distance", "step"}
 
     ###changes by Haoyang Sun - start
@@ -31,6 +31,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     max_nr_steps = int(max_distance / (speed * dt))
 
     for idx, xy_speed in enumerate(xy_speeds):
+        print("performing LLA2x in direction: ", xy_speed)
         axis = int(idx / 2)  # either x or y (0 for x, 1 for y)
 
         reward_array = []  # save rewards during lookahead, to create lookahead video
@@ -39,7 +40,8 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
 
         ###
-
+        max_firing = 0.0
+        max_step = 0
         for i in range(max_nr_steps):
             ###plot = True if (plotting and i == 0 and idx % 2 == 0) else False  # for plotting purposes
             ###changed by Haoyang Sun--Start
@@ -62,19 +64,18 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 # computes projected pc firing
                 firing = pc_network.place_cells[goal_pc_idx].compute_firing_2x(s_vectors, axis)
 
-                ###delete this
-                goal_PC_pos = pc_network.place_cells[goal_pc_idx].env_coordinates
-                ###
+                if axis == 0 and i % 30 == 0:
+                    print(firing)
+
 
 
                 # make sure that firing is strong enough
-                reward = firing if firing > cognitive_map.active_threshold else 0
 
-                ###delete this
-                if reward > max_reward:
-                    max_reward = reward
-                    max_reward_pos = np.linalg.norm(goal_PC_pos - current_pos)
-                ###
+
+                ###changes by Haoyang Sun
+                reward = firing if firing > 0.7 else 0.0#cognitive_map.active_threshold else 0
+                ###changes by Haoyang Sun---end
+
 
 
                 idx_place_cell = goal_pc_idx
@@ -92,6 +93,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 goal_spiking[axis] = {"reward": reward, "idx_place_cell": idx_place_cell,
                                       "distance": distance, "step": i}
                 goal_found = i
+                print("found new reward location with reward: ", reward, " at step: ", i)
 
 
             # Abort conditions to end lookahead earlier
@@ -162,7 +164,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     """Performs a linear lookahead in a preset direction"""
     gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
 
-    dt = gc_network.dt * 40  # checks spiking only every nth step
+    dt = gc_network.dt * 2  # checks spiking only every nth step
     speed = 0.5  # lookahead speed, becomes unstable for large speeds
     #this can be the main reason causing the slow reaction
 
@@ -196,6 +198,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
         xy_speed = np.array([np.cos(angle), np.sin(angle)]) * speed  # lookahead velocity vector
 
         for i in range(max_nr_steps):
+
             firing_values = pc_network.compute_firing_values(gc_network.gc_modules, virtual=True)
             [reward, idx_place_cell] = cognitive_map.compute_reward_spiking_with_filter(firing_values, env.visited_PCs)  # highest reward spiking
             ###changes by Haoyang Sun - start
@@ -211,6 +214,8 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
             if angle in goal_spiking and reward < 0.85 * goal_spiking[angle]["reward"] \
                     and goal_spiking[angle]["reward"] > 0.8 and i > 50:
                 break
+            print("current position: ", env.xy_coordinates[-1]+i*xy_speed*dt, " reward spiking: ", reward, " PC Nr. :", idx_place_cell )
+
 
             gc_network.track_movement(xy_speed, virtual=True, dt_alternative=dt)  # track virtual movement
 

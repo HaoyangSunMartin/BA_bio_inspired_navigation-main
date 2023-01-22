@@ -75,8 +75,8 @@ class Bio_Model:
                                                                                 reward_first_found,
                                                                                 generate_new_PC=self.construct_new_cognitive_map)
 
-            if i % 20 == 0 and i != 0:
-                print("current position: ", self.env.xy_coordinates[-1]," current firing values: ", firing_values)
+            #if i % 20 == 0 and i != 0:
+                #print("current position: ", self.env.xy_coordinates[-1]," current firing values: ", firing_values)
             # Block Cell List Track Movements:
             if self.bc_enabled:
                 if i % 15 == 0:

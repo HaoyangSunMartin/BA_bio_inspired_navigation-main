@@ -1,5 +1,5 @@
 import math
-from plotting.plotThesis import plot_grid_cell_modules, plot_3D_sheets
+from plotting.plotThesis import plot_3D_sheets
 import numpy as np
 import os
 from numba import cuda
@@ -8,6 +8,7 @@ from numba import cuda
 """
 here is the CUDA Implementation of the grid cell module:
 """
+
 
 
 @cuda.jit
@@ -156,7 +157,7 @@ class GridCellModule_CUDA:
         #target state vector
         self.t = np.copy(self.h_sVector)
         #this boolean defines if the model is doing virtual calculation or the environment calculation
-        self.virual = False
+        self.vir = False
 
         self.de = de
         self.gm = gm
@@ -168,8 +169,9 @@ class GridCellModule_CUDA:
         self.E = cuda.to_device(np.array([de, 0]))
         self.tau = tau
         self.dt = dt
+        self.dt_alternative = self.dt * 2
 
-        self.time_parameters = cuda.to_device(np.array([self.tau, self.dt, self.dt * 10]))
+        self.time_parameters = cuda.to_device(np.array([self.tau, self.dt, self.dt_alternative]))
 
         ##this block is added to be compatable with the linear version
         headings = [[-1, 0], [0, 1], [0, -1], [1, 0]]  # [W, N, S, E]
@@ -207,10 +209,12 @@ class GridCellModule_CUDA:
         self.d_sVector = cuda.to_device(self.h_sVector)
 
     def update_s(self, xy_speed, virtual = False, dt_alternative = None):
-        if self.virual==False and virtual==True:
+        if self.vir == False and virtual == True:
             self.prepare_virtual()
-        if self.virual==True and virtual == False:
+
+        if self.vir == True and virtual == False:
             self.reset_s_virtual()
+
         #print("updating the gridCell module with gm: ", self.gm," with movement: ", xy_speed )
         if dt_alternative is None:
 
@@ -226,14 +230,16 @@ class GridCellModule_CUDA:
     #this function should be called every time the model switches to virtual updates
     def prepare_virtual(self):
         self.h_sVector = self.d_sVector.copy_to_host()
-        self.virual =True
+        #print("module: ", self.gm, " preparing for virtual run")
+        self.vir =True
 
     #this function ends the virtual update phase
     def reset_s_virtual(self):
         self.d_sVector = cuda.to_device(self.h_sVector)
-        self.virual = False
+        #print("module: ", self.gm, " ending virtual run")
+        self.vir = False
     def get_s(self, virtual = False):
-        if self.virual:
+        if self.vir:
             if virtual:
                 self.output_sVector = self.d_sVector.copy_to_host()
             else:
@@ -276,15 +282,16 @@ class GridCellNetwork_CUDA:
                 gc = GridCellModule_CUDA((n,n),dt, gm= gm)
                 self.gc_modules.append(gc)
                 print("Created GC module with gm", gc.gm)
-            self.save_gc_model()
+
             nr_steps_init = 1000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
+            self.save_gc_model()
 
         else:
             # Load previous data
-            w_vectors = np.load("data/gc_model/w_vectors.npy")
-            h_vectors = np.load("data/gc_model/h_vectors.npy")
-            gm_values = np.load("data/gc_model/gm_values.npy")
+            w_vectors = np.load("data/CUDA/gc_model/w_vectors.npy")
+            h_vectors = np.load("data/CUDA/gc_model/h_vectors.npy")
+            gm_values = np.load("data/CUDA/gc_model/gm_values.npy")
             print(w_vectors.shape)
             n = int(np.sqrt(np.sqrt(len(w_vectors[0]))))
             for m, gm in enumerate(gm_values):
@@ -328,7 +335,7 @@ class GridCellNetwork_CUDA:
         self.save_gc_spiking(filename)
 
     def load_initialized_network(self, filename):
-        s_vectors = np.load("data/gc_model/" + filename)
+        s_vectors = np.load("data/CUDA/gc_model/" + filename)
         for m, gc in enumerate(self.gc_modules):
             gc.initialize_sVector(s_vectors[m])
         # plot_grid_cell_modules(self.gc_modules, "final")
@@ -340,17 +347,17 @@ class GridCellNetwork_CUDA:
         gm_values = []
         for gc in self.gc_modules:
 
-            w_vectors.append(np.concatenate(gc.h_weightMatrix))
+            w_vectors.append(np.concatenate(gc.d_weightMatrix.copy_to_host()))
             h_vectors.append(gc.h)
             gm_values.append(gc.gm)
 
-        directory = "data/gc_model/"
+        directory = "data/CUDA/gc_model/"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        np.save("data/gc_model/w_vectors.npy", w_vectors)
-        np.save("data/gc_model/h_vectors.npy", h_vectors)
-        np.save("data/gc_model/gm_values.npy", gm_values)
+        np.save("data/CUDA/gc_model/w_vectors.npy", w_vectors)
+        np.save("data/CUDA/gc_model/h_vectors.npy", h_vectors)
+        np.save("data/CUDA/gc_model/gm_values.npy", gm_values)
 
     def consolidate_gc_spiking(self, virtual=False):
         """Consolidate spiking in one matrix for saving"""
@@ -364,11 +371,11 @@ class GridCellNetwork_CUDA:
         s_vectors = self.consolidate_gc_spiking()
         print("saving the s_vectors with shape: ", s_vectors.shape)
 
-        directory = "data/gc_model/"
+        directory = "data/CUDA/gc_model/"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        np.save("data/gc_model/"+filename, s_vectors)
+        np.save("data/CUDA/gc_model/"+filename, s_vectors)
 
     def set_current_as_target_state(self):
         for m, gc in enumerate(self.gc_modules):
@@ -384,7 +391,7 @@ class GridCellNetwork_CUDA:
             gc.reset_s_virtual()
 
     def set_filename_as_target_state(self, filename):
-        t_vectors = np.load("data/gc_model/" + filename)
+        t_vectors = np.load("data/CUDA/gc_model/" + filename)
         for m, gc in enumerate(self.gc_modules):
             gc.t = t_vectors[m]
         print("Set loaded data as new target state:", filename)

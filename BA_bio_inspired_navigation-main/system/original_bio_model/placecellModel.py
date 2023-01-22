@@ -76,13 +76,20 @@ def compute_weights(s_vectors):
 
 class PlaceCellNetwork:
     """A PlaceCellNetwork holds information about all Place Cells"""
-    def __init__(self, from_data=False):
+    def __init__(self, from_data=False, CUDA =False):
         self.place_cells = []  # array of place cells
 
+        self.CUDA = CUDA
+        if self.CUDA:
+            self.path = "data/CUDA/pc_model/"
+        else:
+            self.path = "data/LINEAR/pc_model/"
         if from_data:
+
+
             # Load place cells if wanted
-            gc_connections = np.load("data/pc_model/gc_connections.npy")
-            env_coordinates = np.load("data/pc_model/env_coordinates.npy")
+            gc_connections = np.load(self.path+"gc_connections.npy")
+            env_coordinates = np.load(self.path+"env_coordinates.npy")
 
             for idx, gc_connection in enumerate(gc_connections):
                 pc = PlaceCell(gc_connection)
@@ -197,12 +204,12 @@ class PlaceCellNetwork:
             gc_connections.append(pc.gc_connections)
             env_coordinates.append(pc.env_coordinates)
 
-        directory = "data/pc_model/"
+        directory = self.path
         if not os.path.exists(directory):
             os.makedirs(directory)
             
-        np.save("data/pc_model/gc_connections" + filename + ".npy", gc_connections)
-        np.save("data/pc_model/env_coordinates" + filename + ".npy", env_coordinates)
+        np.save(directory+"gc_connections" + filename + ".npy", gc_connections)
+        np.save(directory+"env_coordinates" + filename + ".npy", env_coordinates)
 
 
 ###changes by Haoyang Sun-start

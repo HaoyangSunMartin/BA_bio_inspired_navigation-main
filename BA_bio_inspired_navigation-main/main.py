@@ -46,18 +46,17 @@ Conventional = None
 
 visualize = False
 from_data = True
-use_CUDA = True
+use_CUDA = False
 bc_enabled =False
-nr_steps = 15000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
+nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
-nr_steps_exploration = nr_steps
+nr_steps_exploration = 0
 
-
-construct_new_cognitive_map = True
+construct_new_cognitive_map = False
 
 conventional = False
 
-goal_idx = 255
+goal_idx = 27
 
 env_coding = "plane"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
@@ -104,9 +103,10 @@ env = PybulletEnvironment(visualize, env_model, dt, pod=pod_network, doors_optio
 ###changes by HAOYANG SUN-end
 
 # initialize Place Cell Model
-pc_network = PlaceCellNetwork(from_data=from_data)
+pc_network = PlaceCellNetwork(from_data=from_data, CUDA=use_CUDA)
 # initialize Cognitive Map Model
-cognitive_map = CognitiveMapNetwork(dt, from_data=from_data)
+cognitive_map = CognitiveMapNetwork(dt, from_data=from_data, CUDA=use_CUDA)
+
 
 
 if bc_enabled:

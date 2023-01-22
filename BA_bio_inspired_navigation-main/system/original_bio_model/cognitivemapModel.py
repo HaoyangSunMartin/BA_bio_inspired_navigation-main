@@ -10,15 +10,20 @@ import os
 
 class CognitiveMapNetwork:
     """The CognitiveMapNetwork keeps track of all recency, topology and reward cells"""
-    def __init__(self, dt, from_data=False):
+    def __init__(self, dt, from_data=False, CUDA = False):
+        self.CUDA = CUDA
+        if self.CUDA:
+            self.path = "data/CUDA/cognitive_map/"
+        else:
+            self.path = "data/LINEAR/cognitive_map/"
         if not from_data:
             self.recency_cells = np.array([])  # array of firing values between 0 and 1; 1 where the agent is
             self.topology_cells = np.zeros((1, 1))  # matrix of connections, size (#pc x #pc)
             self.reward_cells = np.array([])  # array of firing values between 0 and 1; 1 where the goal is
             self.block_cells = np.array([])
         else:
-            self.topology_cells = np.load("data/cognitive_map/topology_cells.npy")
-            self.reward_cells = np.load("data/cognitive_map/reward_cells.npy")
+            self.topology_cells = np.load(self.path+"topology_cells.npy")
+            self.reward_cells = np.load(self.path+"reward_cells.npy")
             self.recency_cells = np.zeros_like(self.reward_cells)
             self.block_cells = []
             self.recency_cells[0] = 1
@@ -121,9 +126,9 @@ class CognitiveMapNetwork:
     ###changes by Haoyang Sun-end
 
     def save_cognitive_map(self, filename=""):
-        directory = "data/cognitive_map/"
+        directory = self.path
         if not os.path.exists(directory):
             os.makedirs(directory)
-        np.save("data/cognitive_map/recency_cells" + filename + ".npy", self.recency_cells)
-        np.save("data/cognitive_map/topology_cells" + filename + ".npy", self.topology_cells)
-        np.save("data/cognitive_map/reward_cells" + filename + ".npy", self.reward_cells)
+        np.save(self.path+"recency_cells" + filename + ".npy", self.recency_cells)
+        np.save(self.path+"topology_cells" + filename + ".npy", self.topology_cells)
+        np.save(self.path+"reward_cells" + filename + ".npy", self.reward_cells)

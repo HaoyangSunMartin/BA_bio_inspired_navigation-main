@@ -275,9 +275,9 @@ class GridCellNetwork:
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
         else:
             # Load previous data
-            w_vectors = np.load("data/gc_model/w_vectors.npy")
-            h_vectors = np.load("data/gc_model/h_vectors.npy")
-            gm_values = np.load("data/gc_model/gm_values.npy")
+            w_vectors = np.load("data/LINEAR/gc_model/w_vectors.npy")
+            h_vectors = np.load("data/LINEAR/gc_model/h_vectors.npy")
+            gm_values = np.load("data/LINEAR/gc_model/gm_values.npy")
 
             n = int(np.sqrt(len(w_vectors[0][0])))
             for m, gm in enumerate(gm_values):
@@ -313,7 +313,7 @@ class GridCellNetwork:
         self.save_gc_spiking(filename)
 
     def load_initialized_network(self, filename):
-        s_vectors = np.load("data/gc_model/" + filename)
+        s_vectors = np.load("data/LINEAR/gc_model/" + filename)
         for m, gc in enumerate(self.gc_modules):
             gc.s = s_vectors[m]
         # plot_grid_cell_modules(self.gc_modules, "final")
@@ -328,13 +328,13 @@ class GridCellNetwork:
             h_vectors.append(gc.h)
             gm_values.append(gc.gm)
 
-        directory = "data/gc_model/"
+        directory = "data/LINEAR/gc_model/"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        np.save("data/gc_model/w_vectors.npy", w_vectors)
-        np.save("data/gc_model/h_vectors.npy", h_vectors)
-        np.save("data/gc_model/gm_values.npy", gm_values)
+        np.save("data/LINEAR/gc_model/w_vectors.npy", w_vectors)
+        np.save("data/LINEAR/gc_model/h_vectors.npy", h_vectors)
+        np.save("data/LINEAR/gc_model/gm_values.npy", gm_values)
 
     def consolidate_gc_spiking(self, virtual=False):
         """Consolidate spiking in one matrix for saving"""
@@ -347,11 +347,11 @@ class GridCellNetwork:
     def save_gc_spiking(self, filename):
         s_vectors = self.consolidate_gc_spiking()
 
-        directory = "data/gc_model/"
+        directory = "data/LINEAR/gc_model/"
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        np.save("data/gc_model/"+filename, s_vectors)
+        np.save("data/LINEAR/gc_model/"+filename, s_vectors)
 
     def set_current_as_target_state(self):
         for m, gc in enumerate(self.gc_modules):
@@ -368,7 +368,7 @@ class GridCellNetwork:
             gc.s_video_array.clear()
 
     def set_filename_as_target_state(self, filename):
-        t_vectors = np.load("data/gc_model/" + filename)
+        t_vectors = np.load("data/LINEAR/gc_model/" + filename)
         for m, gc in enumerate(self.gc_modules):
             gc.t = t_vectors[m]
         print("Set loaded data as new target state:", filename)
