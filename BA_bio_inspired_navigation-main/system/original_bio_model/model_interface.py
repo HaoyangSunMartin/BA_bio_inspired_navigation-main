@@ -6,7 +6,8 @@ from plotting.plotThesis import *
 
 class Bio_Model:
 
-    def __init__(self, gc_network = None, env = None,pc_network = None, cognitive_map = None, nr_plots = 5,nr_steps = 8000, goal_idx = 255, bc_enabled = False, video= False, spike_detector = None,pod_network = None,construct_new_cognitive_map = False, nr_steps_exploration=0):
+    def __init__(self,trag_coding = "Full_Exploration", gc_network = None, env = None,pc_network = None, cognitive_map = None, nr_plots = 5,nr_steps = 8000, goal_idx = 255, bc_enabled = False, video= False, spike_detector = None,pod_network = None,construct_new_cognitive_map = False, nr_steps_exploration=0):
+        self.trag_coding = trag_coding
         self. video = video
         self.step = 1
         self.nr_steps_exploration = nr_steps_exploration
@@ -46,7 +47,7 @@ class Bio_Model:
             exploration_phase = True if i < self.nr_steps_exploration else False
             # compute the goal_vector from rodent to goal in global coordinate system
             if exploration_phase:
-                compute_exploration_goal_vector(self.env, i)
+                compute_exploration_goal_vector(self.env, i, trag_coding = self.trag_coding)
             else:
                 compute_navigation_goal_vector(self.gc_network, self.pc_network, self.cognitive_map, i - self.nr_steps_exploration, self.env,
                                                pod=self.pod_network, spike_detector=self.spike_detector, model=self.vector_model)

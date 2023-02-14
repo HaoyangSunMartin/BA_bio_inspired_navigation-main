@@ -368,8 +368,9 @@ class GridCellNetwork_CUDA:
         return s_vectors
 
     def save_gc_spiking(self, filename):
+
         s_vectors = self.consolidate_gc_spiking()
-        print("saving the s_vectors with shape: ", s_vectors.shape)
+        print("saving the GC module spiking with shape: ", s_vectors.shape)
 
         directory = "data/CUDA/gc_model/"
         if not os.path.exists(directory):

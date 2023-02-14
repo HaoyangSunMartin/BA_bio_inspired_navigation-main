@@ -194,6 +194,16 @@ def plot_linear_lookahead_function(proj_gc_connections, proj_s_vectors, filtered
             plt.savefig("plots/linear_lookahead/projection_linear_lookahead_" + str(axis) + str(idx))
         plt.close()
 
+# --------------- Plot Linear Look Ahead Axis Projection ---------------
+def plot_LLA_Projection(distance, firing, axis):
+    fig, ax = plt.subplots()
+    ax.set_xlabel("projective distance")
+    ax.set_ylabel("projective firing")
+    direction = 'x' if axis==0 else 'y'
+    ax.set_title("Projective LLA on "+ direction+ " Axis")
+    ax.plot(distance, firing, 'o')
+
+
 
 # --------------- Plot grid cell decoder all trials ---------------
 def plot_vector_navigation_error(error):

@@ -165,7 +165,7 @@ def ds_dt(t, s, w, b, tau):
 
 class GridCellModule:
     """One GridCellModule holds the information of a sheet of n x n neurons"""
-    def __init__(self, n, gm, dt, data=None):
+    def __init__(self, n, gm, dt, tuned_direction='x',data=None):
         self.CUDA = False
         self.n = n  # Grid Cell sheet size (height and width)
         self.gm = gm  # velocity gain factor
@@ -183,13 +183,18 @@ class GridCellModule:
         self.dt = dt  # time step size
 
         self.s_video_array = []
-
+        self.tuned_direction = tuned_direction
         # If we are not loading grid cell data we have to calculate grid cell sheet weights
         if data is None:
+            W = [-1, 0]
+            N = [0, 1]
+            S = [0, -1]
+            E = [1, 0]
             # Refer to thesis for concept of grid cell sheet and how weights are computed
-
-            headings = [[-1, 0], [0, 1], [0, -1], [1, 0]]  # [W, N, S, E]
-
+            if tuned_direction == 'x':
+                headings = [W, N, S, E]  # [W, N, S, E]
+            else:
+                headings = [W, S, N, E]  # [E, S, N, W]
             grid = np.indices((n, n))  # grid function to create x and y vectors
             x = np.concatenate(grid[1])  # x vector of form eg. [0, 0, 0, 1, 1, 1, 2, 2, 2]
             y = np.concatenate(grid[0])  # y vector of form eg. [0, 1, 2, 0, 1, 2, 0, 1, 2]
@@ -258,36 +263,51 @@ class GridCellModule:
 
 class GridCellNetwork:
     """GridCellNetwork holds all Grid Cell Modules"""
-    def __init__(self, n, M, dt, gmin, gmax=None, from_data=False):
+    def __init__(self, n, M, dt, gmin, gmax=None, from_data=False, randomized_init =False):
 
         self.gc_modules = []  # array holding objects GridCellModule
         self.dt = dt
-
+        self.random_init = randomized_init
+        self.tuned_vector = []
+        self.gm_vector = []
         if not from_data:
             # Create new GridCellModules
-            for m in range(M):
+            for i, m in enumerate(range(M)):
+
                 gm = compute_gm(m, M, gmin, gmax)
-                gc = GridCellModule(n, gm, dt)
+                self.gm_vector.append(gm)
+                if i % 2 == 0:
+                    direction = 'y'
+                else:
+                    direction = 'x'
+                gc = GridCellModule(n, gm, dt, tuned_direction=direction)
                 self.gc_modules.append(gc)
-                print("Created GC module with gm", gc.gm)
+                print("Created GC module with gm", gc.gm, " tuned to the direction ", direction )
+
+            for i in self.gc_modules:
+                self.tuned_vector.append(i.tuned_direction)
             self.save_gc_model()
             nr_steps_init = 2000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
+
         else:
             # Load previous data
             w_vectors = np.load("data/LINEAR/gc_model/w_vectors.npy")
             h_vectors = np.load("data/LINEAR/gc_model/h_vectors.npy")
             gm_values = np.load("data/LINEAR/gc_model/gm_values.npy")
 
+            self.tuned_vector = np.load("data/LINEAR/gc_model/tuned_direction.npy")
+            self.gm_vector = gm_values
             n = int(np.sqrt(len(w_vectors[0][0])))
             for m, gm in enumerate(gm_values):
-                gc = GridCellModule(n, gm, dt, {"w": w_vectors[m], "h": h_vectors[m]})
+                gc = GridCellModule(n, gm, dt, data={"w": w_vectors[m], "h": h_vectors[m]},tuned_direction=self.tuned_vector[m])
                 self.gc_modules.append(gc)
-                print("Loaded GC module with gm", gc.gm)
+                print("Loaded GC module with gm", gc.gm, " tuned to direction ", self.tuned_vector[m])
 
             self.load_initialized_network("s_vectors_initialized.npy")
 
         self.set_current_as_target_state()  # by default home-base is set as goal vector
+
 
     def track_movement(self, xy_speed, virtual=False, dt_alternative=None):
         """For each grid cell module update spiking"""
@@ -296,17 +316,36 @@ class GridCellNetwork:
 
     def initialize_network(self, nr_steps, filename):
         """For each grid cell module initialize spiking"""
-        xy_speed = [0, 0]
-        for i in range(nr_steps):
-            if np.random.random() > 0.95:
-                # Apply a small velocity vector in some cases to ensure that peaks form
-                xy_speed = np.random.rand(2) * 0.2
-            self.track_movement(xy_speed)
-            #if i % 499 == 0:
-                #print("Currently at Timestep:", i)
-                # plot_grid_cell_modules(self.gc_modules, i)
-                #plot_3D_sheets(self.gc_modules, i)
-        print("Finished Initialization of nr_steps:", nr_steps)
+        if self.random_init:
+            xy_speed = [0, 0]
+            for i in range(nr_steps):
+                if np.random.random() > 0.95:
+                    # Apply a small velocity vector in some cases to ensure that peaks form
+                    xy_speed = np.random.rand(2) * 0.2
+                self.track_movement(xy_speed)
+                #if i % 499 == 0:
+                    #print("Currently at Timestep:", i)
+                    # plot_grid_cell_modules(self.gc_modules, i)
+                    #plot_3D_sheets(self.gc_modules, i)
+            print("Finished Initialization of nr_steps:", nr_steps)
+        else:
+
+            xy_speed_array = [np.array([0.5, 0.0]), np.array([0.0, 0.5]),
+                              np.array([-0.5, 0.0]), np.array([0.0, -0.5])]
+            nr = math.floor(nr_steps / 4)
+            for i in range(nr_steps):
+                # if i % nr == 0:
+                # print("Currently at Timestep:", i)
+                # plot_3D_sheets(self.gc_modules, i)
+
+                # print("Currently at Timestep:", i)
+                xy_speed = xy_speed_array[math.floor(i / nr)]
+                self.track_movement(xy_speed)
+            for i in range(nr):
+                xy_speed = np.array([0.2, 0.2], dtype=np.double)
+                self.track_movement(xy_speed)
+            print("Finished Initialization of nr_steps:", nr_steps)
+
         plot_grid_cell_modules(self.gc_modules, nr_steps)
         plot_3D_sheets(self.gc_modules, nr_steps)
 
@@ -323,10 +362,12 @@ class GridCellNetwork:
         w_vectors = []
         h_vectors = []
         gm_values = []
+        tuned_vector = []
         for gc in self.gc_modules:
             w_vectors.append(gc.w)
             h_vectors.append(gc.h)
             gm_values.append(gc.gm)
+            tuned_vector.append(gc.tuned_direction)
 
         directory = "data/LINEAR/gc_model/"
         if not os.path.exists(directory):
@@ -335,6 +376,7 @@ class GridCellNetwork:
         np.save("data/LINEAR/gc_model/w_vectors.npy", w_vectors)
         np.save("data/LINEAR/gc_model/h_vectors.npy", h_vectors)
         np.save("data/LINEAR/gc_model/gm_values.npy", gm_values)
+        np.save("data/LINEAR/gc_model/tuned_direction.npy", tuned_vector)
 
     def consolidate_gc_spiking(self, virtual=False):
         """Consolidate spiking in one matrix for saving"""
