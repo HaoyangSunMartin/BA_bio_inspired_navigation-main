@@ -27,6 +27,8 @@ class PlaceCell:
 
     def compute_firing_2x(self, s_vectors, axis, tuned_vector= None,  gm_vector=None, plot=False):
         """Computes firing projected on one axis, based on current grid cell spiking"""
+
+
         new_dim = int(np.sqrt(len(s_vectors[0])))  # n
         current_direction = 'x' if axis==0 else 'y'
 
@@ -51,7 +53,7 @@ class PlaceCell:
 
         firing = 0.0
         num_firing = 0
-        normal = np.multiply(proj_s_vectors, proj_s_vectors)
+        normal = np.multiply(proj_gc_connections, proj_gc_connections)
         set = [0, 1, 2, 3, 4, 5, 6]
         #calculate weight of each module:
         direction_norm = 0.0
@@ -68,12 +70,16 @@ class PlaceCell:
             else:
                 w = 0.0
             weight.append(w)
-
+        same_weight = False
+        if same_weight:
+            weight = [1.0,1.0,1.0,1.0,1.0,1.0,1.0]
         #weight = [1.0,1.0,1.0,1.0,1.0,1.0,1.0]
         for i, f in enumerate(filtered):
             if tuned_vector[i] == current_direction and i in set:
                 firing += weight[i]*(np.sum(f) / np.sum(normal[i]))
                 num_firing += 1
+        if same_weight:
+            firing = firing / num_firing
         #if np.sum(weight) > 1.1:
             #firing = firing / num_firing
         #firing -= 0.05

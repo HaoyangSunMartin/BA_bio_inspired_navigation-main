@@ -200,7 +200,7 @@ class PybulletEnvironment:
             idx = np.argmin(ray_dist)
             angle = angles[idx] + np.pi
             self.goal_vector = np.array([np.cos(angle), np.sin(angle)]) * 0.5
-            print("obstacle too close, backing off\n")
+            #print("obstacle too close, backing off\n")
             self.goal_vector_original = self.goal_vector
 
             self.topology_based = True

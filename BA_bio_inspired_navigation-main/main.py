@@ -15,6 +15,7 @@ from system.controller.explorationPhase import get_exploration_trajectory
 from system.controller.navigationPhase import compute_navigation_goal_vector
 from system.controller.navigationPhase import conventional_method_A_star
 from system.controller.navigationPhase import get_trajectory_from_place_cell
+from system.conventional_methods.D_star_Lite_Test import Test
 
 
 from system.simple_bio_model.model_interface_SIMPLE import Bio_Model_SIMPLE
@@ -33,6 +34,13 @@ import time
 generate = False
 
 
+D_Star_Lite = False
+
+if D_Star_Lite:
+    test = Test(env_coding="", prior_knowledge_encoding= "", connectivity_style= "", interactive=False)
+    test.play()
+
+
 
 #####Testing Ground For Python-end
 randomized_init = False
@@ -43,7 +51,7 @@ print(helper.timer4LinearLookAhead)
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-SIMPLE = False
+SIMPLE = True
 Conventional = None
 
 visualize = False
@@ -58,9 +66,9 @@ construct_new_cognitive_map = False
 
 conventional = False
 
-goal_idx = 29
+goal_idx = 26
 
-env_coding = "plane_doors_1"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #
@@ -72,6 +80,7 @@ if generate:
     nr_steps_exploration=nr_steps
     construct_new_cognitive_map=True
     goal_idx = 50
+    env_coding = "plane"
 
 
 
@@ -124,28 +133,6 @@ cognitive_map = CognitiveMapNetwork(dt, from_data=from_data, CUDA=use_CUDA)
 
 ###
 #print the current GC-network Orientation and the firing ralation according to projective distance
-if not generate:
-    print(gc_network.tuned_vector)
-    x_distance = []
-    y_distance = []
-    firing_x = []
-    firing_y = []
-    target_x = pc_network.place_cells[goal_idx].env_coordinates[0]
-    target_y = pc_network.place_cells[goal_idx].env_coordinates[1]
-    for i, pc in enumerate(pc_network.place_cells):
-        x_distance.append(np.abs(pc.env_coordinates[0] - target_x))
-        y_distance.append(np.abs(pc.env_coordinates[1] - target_y))
-        firing_x.append(pc_network.place_cells[goal_idx].compute_firing_2x(pc_network.place_cells[i].gc_connections,
-                                                                           axis=0,
-                                                                           tuned_vector=gc_network.tuned_vector,
-                                                                           gm_vector= gc_network.gm_vector))
-        firing_y.append(pc_network.place_cells[goal_idx].compute_firing_2x(pc_network.place_cells[i].gc_connections,
-                                                                           axis=1,
-                                                                           tuned_vector=gc_network.tuned_vector,
-                                                                           gm_vector= gc_network.gm_vector))
-    plot_LLA_Projection(x_distance, firing_x, 0)
-    plot_LLA_Projection(y_distance, firing_y, 1)
-
 
 if bc_enabled:
     bc_list = BlockCellList(from_data=from_data)
@@ -194,6 +181,7 @@ else:
     fig = None
 
 plot_matching_vectors = False  # False for default, True if you want to match spikes in the grid cel spiking plots
+
 
 model = Bio_Model(trag_coding = trag_coding, construct_new_cognitive_map=construct_new_cognitive_map,goal_idx=goal_idx,nr_steps_exploration=nr_steps_exploration,nr_steps=nr_steps,video=video,gc_network=gc_network, pc_network = pc_network, cognitive_map = cognitive_map,env=env)
 

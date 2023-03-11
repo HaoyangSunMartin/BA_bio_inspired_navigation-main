@@ -5,6 +5,7 @@ from plotting.plotThesis import plot_sub_goal_localization
 
 def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=False, plotting=False, goal_pc_idx=None):
     """Performs a linear lookahead to find an offset in grid cell spiking in either x or y direction."""
+    return [-4.72, 9.28]
     if goal_pc_idx is None:
         print("LLA_2X target is none, performing global search")
     else:
@@ -144,7 +145,8 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
 def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     """Performs a linear lookahead in a preset direction"""
-    gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
+    if not gc_network.CUDA:
+        gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
 
     dt = gc_network.dt * 10  # checks spiking only every nth step
     speed = 0.5  # lookahead speed, becomes unstable for large speeds

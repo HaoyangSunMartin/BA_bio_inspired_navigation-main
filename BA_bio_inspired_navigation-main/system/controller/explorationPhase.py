@@ -76,8 +76,8 @@ def get_exploration_trajectory(trag_coding = "Full_Exploration"):
     if trag_coding == "Full_Exploration":
         ##G01: [1.5, 4.5--7.5], G02: [3.5, 4.5--7.5], G03: [5.5, 4.5--7.5], G04: [7.5, 4.5--7.5], G05: [9.5, 4.5--7.5]
         goals = np.array([
-            sll,
-            slu,
+            #sll,
+            ing01,
             # srl,
             sru,
             # sll,

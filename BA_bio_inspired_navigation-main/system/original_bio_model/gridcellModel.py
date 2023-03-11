@@ -264,7 +264,7 @@ class GridCellModule:
 class GridCellNetwork:
     """GridCellNetwork holds all Grid Cell Modules"""
     def __init__(self, n, M, dt, gmin, gmax=None, from_data=False, randomized_init =False):
-
+        self.CUDA=False
         self.gc_modules = []  # array holding objects GridCellModule
         self.dt = dt
         self.random_init = randomized_init
@@ -277,9 +277,9 @@ class GridCellNetwork:
                 gm = compute_gm(m, M, gmin, gmax)
                 self.gm_vector.append(gm)
                 if i % 2 == 0:
-                    direction = 'y'
-                else:
                     direction = 'x'
+                else:
+                    direction = 'y'
                 gc = GridCellModule(n, gm, dt, tuned_direction=direction)
                 self.gc_modules.append(gc)
                 print("Created GC module with gm", gc.gm, " tuned to the direction ", direction )

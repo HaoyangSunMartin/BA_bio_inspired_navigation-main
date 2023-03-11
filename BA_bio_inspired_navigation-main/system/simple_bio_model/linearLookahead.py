@@ -117,6 +117,11 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     ###changed by Haoyang Sun--End
     return goal_vector
 
+def is_PC_Scarcity(LLA_List):
+    threshold = 4
+    return len(LLA_List)<=threshold
+
+
 
 def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     """Performs a linear lookahead in a preset direction"""
@@ -136,7 +141,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     max_distance = horizon * env.arena_size  # after this distance lookahead is aborted
     ###changes by Haoyang Sun - end
     max_nr_steps = int(max_distance / (speed * dt))
-
+    virtual_list = []
     for idx, angle in enumerate(angles):
 
         # Check if lookahead direction is blocked
@@ -157,7 +162,10 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
 
         for i in range(max_nr_steps):
             firing_values = pc_network.compute_firing_values(gc_network.get_position(virtual=True))
-
+            ##for reward projection: check the current PC of the virtual place
+            virtual_current_PC = pc_network.check_current_PC(gc_network.get_position(virtual=True))
+            if virtual_current_PC not in virtual_list:
+                virtual_list.append(virtual_current_PC)
             ###changes by Haoyang Sun - start
             # highest reward spiking
             [reward, idx_place_cell] = cognitive_map.compute_reward_spiking_with_filter(firing_values, pc_network.visited)
@@ -210,4 +218,6 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     ###changed by Haoyang Sun--Start
     #plot_sub_goal_localization(env, cognitive_map, pc_network, env.goal_vector, filename, idx_angle, goal_spiking)
     ###changed by Haoyang Sun--End
+    print("current PC scarcity value is: ", len(virtual_list))
+
     return goal_vector

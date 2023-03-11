@@ -118,3 +118,4 @@ class Bio_Model:
             progress_str = "Progress: " + str(int((frame * 100) / self.nr_steps)) + "% | Current video is: " + str(
                 frame * dt) + "s long"
             print(progress_str)
+

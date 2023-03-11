@@ -142,6 +142,7 @@ def update_GC_CUDA_Alternative(w_matrix, s_vector, x_movement, y_movement, gm, W
 class GridCellModule_CUDA:
     def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1):
         self.CUDA = True
+        print("This is GC_Module using CUDA")
         self.sheetDimension = sheetDimension
         self.weightMatrixDimension = (
         self.sheetDimension[0] * self.sheetDimension[1], self.sheetDimension[0] * self.sheetDimension[1])
@@ -232,12 +233,15 @@ class GridCellModule_CUDA:
         self.h_sVector = self.d_sVector.copy_to_host()
         #print("module: ", self.gm, " preparing for virtual run")
         self.vir =True
+        #print("preparing for virtual up-date, loading the d_sVector to h_sVector")
 
     #this function ends the virtual update phase
     def reset_s_virtual(self):
         self.d_sVector = cuda.to_device(self.h_sVector)
         #print("module: ", self.gm, " ending virtual run")
         self.vir = False
+        #print("reseting d_sVector to h_sVector")
+
     def get_s(self, virtual = False):
         if self.vir:
             if virtual:
@@ -399,3 +403,7 @@ class GridCellNetwork_CUDA:
 
     def plot_modules(self, nr_steps):
         plot_3D_sheets(self.gc_modules, nr_steps)
+
+    def prepare_virtual(self):
+        for m, gc in enumerate(self.gc_modules):
+            gc.prepare_virtual()
