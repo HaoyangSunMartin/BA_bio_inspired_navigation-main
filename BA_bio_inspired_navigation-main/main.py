@@ -63,7 +63,7 @@ use_CUDA = True
 bc_enabled =False
 nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
-nr_steps_exploration = 0
+nr_steps_exploration = nr_steps
 
 construct_new_cognitive_map = False
 
