@@ -2,6 +2,59 @@
 import numpy as np
 
 
+def check_tuned_direction_vector(gc_network):
+    direction_vector = []
+    new_dim = gc_network.n
+    for gc in gc_network.gc_modules:
+        s = gc.get_s(virtual=False)
+        filter = np.where(s>0.1, 1.0, 0.0)
+
+        s = np.multiply(s, filter)
+        print(s.shape)
+
+        #s = np.reshape(s,(new_dim,new_dim))
+
+        #s_filtered = np.where(s>0.1, 1, 0)
+        decided = False
+        for axis in range(2):
+            dir = 'x' if axis==0 else 'y'
+            pro = np.sum(s, axis=axis)
+            #print("current direction is ", dir, " argmin is ", np.amin(pro))
+            if np.amin(pro) == 0 and not decided:
+                direction_vector.append(dir)
+                decided = True
+        if not decided:
+            direction_vector.append('u')
+
+    return direction_vector
+
+def naive_average_smoothing(array):
+    c = np.copy(array)
+    for i in range(len(array)):
+        if i==0 or i==len(array)-1:
+            continue
+        else:
+            c[i]=np.average([array[i-1],array[i], array[i+1]])
+    return c
+def naive_2D_sheet_smoothing(sheet,n):
+    sheet_copy = np.copy(sheet)
+    for x, _ in enumerate(sheet):
+        for y, _ in enumerate(sheet[x]):
+            l = []
+            l.append(sheet[x][y])
+            if x != 0:
+                l.append(sheet[x - 1][y])
+
+            if x != n - 1:
+                l.append(sheet[x + 1][y])
+
+            if y != 0:
+                l.append(sheet[x][y - 1])
+
+            if y != n - 1:
+                l.append(sheet[x][y + 1])
+            sheet_copy[x][y]=np.average(l)
+    return sheet_copy
 #this function computes the relative angle between 2 vectors
 def compute_angle(vec_1, vec_2):
     length_vector_1 = np.linalg.norm(vec_1)
