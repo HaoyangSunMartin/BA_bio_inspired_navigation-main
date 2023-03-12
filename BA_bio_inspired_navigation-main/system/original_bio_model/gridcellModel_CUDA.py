@@ -257,9 +257,9 @@ def update_GC_CUDA_y_Alternative(w_matrix, s_vector, x_movement, y_movement, gm,
 
 
 class GridCellModule_CUDA:
-    def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1, tuned_direction= 'x'):
-        self.tuned_direction=tuned_direction
+    def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1):
         self.CUDA = True
+        print("This is GC_Module using CUDA")
         self.sheetDimension = sheetDimension
         self.weightMatrixDimension = (
         self.sheetDimension[0] * self.sheetDimension[1], self.sheetDimension[0] * self.sheetDimension[1])
@@ -302,7 +302,7 @@ class GridCellModule_CUDA:
         ##
 
         # declare the CUDA Structure for weightMatrix Manipulation
-        self.threadsPerBlock = (4, 4)
+        self.threadsPerBlock = (8, 8)
         blocksPerGrid_x = math.ceil(self.weightMatrixDimension[0] / self.threadsPerBlock[0])
         blocksPerGrid_y = math.ceil(self.weightMatrixDimension[1] / self.threadsPerBlock[1])
         self.blocksPerGrid = (blocksPerGrid_x, blocksPerGrid_y)
@@ -313,16 +313,9 @@ class GridCellModule_CUDA:
 
     def initializeWeightMatrix(self, data = None):
         if data is None:
-            if self.tuned_direction == 'x':
-                calculate_distance_CUDA_x[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension,
-                                                                                    self.d_weightMatrix,
-                                                                                    self.de)
-            else:
-                calculate_distance_CUDA_y[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension,
-                                                                                    self.d_weightMatrix,
-                                                                                    self.de)
+            calculate_distance_CUDA[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension, self.d_weightMatrix,
+                                                                              self.de)
             rec_d_CUDA[self.blocksPerGrid, self.threadsPerBlock](self.d_weightMatrix, self.r, self.lamda)
-            self.h_weightMatrix = self.d_weightMatrix.copy_to_host()
         else:
             self.h_weightMatrix = np.reshape(data["w"], self.weightMatrixDimension)
             self.d_weightMatrix = cuda.to_device(self.h_weightMatrix)
@@ -337,35 +330,20 @@ class GridCellModule_CUDA:
         if self.vir == False and virtual == True:
             self.prepare_virtual()
 
-
         if self.vir == True and virtual == False:
             self.reset_s_virtual()
 
         #print("updating the gridCell module with gm: ", self.gm," with movement: ", xy_speed )
         if dt_alternative is None:
 
-            if self.tuned_direction == 'x':
-                update_GC_CUDA_x[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
-            else:
-                update_GC_CUDA_y[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
-
+            update_GC_CUDA[self.blocksPerGrid_sVector, self.threadsPerBlock] \
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
+                 self.time_parameters)
         else:
-            if self.tuned_direction == 'x':
-                update_GC_CUDA_x_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
-            else:
-                update_GC_CUDA_y_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
+            update_GC_CUDA_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock]\
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
+                 self.time_parameters)
+
 
     #this function should be called every time the model switches to virtual updates
     def prepare_virtual(self):

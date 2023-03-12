@@ -31,7 +31,7 @@ import time
 #####Testing Ground For Python-start
 
 
-generate = False
+generate = True
 
 
 D_Star_Lite = False
