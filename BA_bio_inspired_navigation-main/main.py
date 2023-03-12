@@ -31,10 +31,10 @@ import time
 #####Testing Ground For Python-start
 
 
-generate = True
+generate = False
 
 
-D_Star_Lite = False
+D_Star_Lite = True
 
 if D_Star_Lite:
     start_timer = time.time()
@@ -54,12 +54,12 @@ print(helper.timer4LinearLookAhead)
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-SIMPLE = False
+SIMPLE = True
 Conventional = None
 
-visualize = False
+visualize = True
 from_data = True
-use_CUDA = True
+use_CUDA = False
 bc_enabled =False
 nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
@@ -71,7 +71,7 @@ conventional = False
 
 goal_idx = 26
 
-env_coding = "plane"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane_doors_huge"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #
@@ -155,13 +155,12 @@ if conventional:
     print("using the conventional approach, the traveled distance is:", conven_dist)
     plot_trajectory_on_map(conven_tra, env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
                            env_coding=env_coding,center_block=center_block)
-"""
 if construct_new_cognitive_map:
     plot_trajectory_on_map(get_exploration_trajectory(trag_coding = trag_coding), env, cognitive_map, pc_network, [0, 0], "convention_trajectory_map",
                            env_coding=env_coding,center_block=center_block)
 plot_cognitive_map(env,cognitive_map,pc_network,[0,0],"initial_cognitive_map",env_coding=env_coding,center_block=center_block)
 ###changes by Haoyang Sun-end
-"""
+
 # run simulation
 nr_steps = nr_steps #15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation

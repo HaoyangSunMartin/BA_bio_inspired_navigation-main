@@ -3,7 +3,6 @@ from system.controller.explorationPhase import compute_exploration_goal_vector
 from system.controller.navigationPhase import compute_navigation_goal_vector
 from plotting.plotResults import *
 from plotting.plotThesis import *
-from numba import jit
 
 class Bio_Model:
 
@@ -23,12 +22,11 @@ class Bio_Model:
         self.bc_enabled = bc_enabled
         self.vector_model = "linear_lookahead"
         self.bc_list = None
-        self.goal_idx = goal_idx
+        self.goal_idx = 255
         self.nr_steps = nr_steps
         self.nr_plots = nr_plots
         [self.fig, self.f_gc, self.f_t, self.f_mon] = layout_video()
 
-    @jit(nopython=True)
     def animation_frame(self, frame):
         if self.video:
             # calculate how many simulations steps to do for current frame
