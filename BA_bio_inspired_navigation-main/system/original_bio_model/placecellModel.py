@@ -25,80 +25,70 @@ class PlaceCell:
         firing = np.average(modules_firing)  # compute overall pc firing by summing averaging over modules
         return firing
 
-    def compute_firing_2x(self, s_vectors, axis, tuned_vector= None,  gm_vector=None, plot=False):
+    def compute_firing_2x(self, s_vectors, axis, tuned_vector=None, gm_vector=None, plot=False):
         """Computes firing projected on one axis, based on current grid cell spiking"""
-
-
         new_dim = int(np.sqrt(len(s_vectors[0])))  # n
-        current_direction = 'x' if axis==0 else 'y'
-
+        # filter the neural sheet of the gc connection and the gc modules
         s_vectors = np.where(s_vectors > 0.1, 1, 0)  # mute weak grid cell spiking, transform to binary vector
         gc_connections = np.where(self.gc_connections > 0.1, 1, 0)  # mute weak connections, transform to binary vector
-
+        # check the tuned direction of the gc connection and the gc modules
         proj_s_vectors = np.empty((len(s_vectors[:, 0]), new_dim))
+        direction_s_vector = []  # record the tuned direction of the s_vector
         for i, s in enumerate(s_vectors):
             s = np.reshape(s, (new_dim, new_dim))  # reshape (n^2 x 1) vector to n x n vector
-            proj_s_vectors[i] = np.sum(s, axis=axis)  # sum over column/row
-
+            p = np.sum(s, axis=axis)  # sum over column/row
+            proj_s_vectors[i] = p
+            if np.amin(p) == 0:  # if the gc connection is tuned to this direction, record 1 else 0
+                direction_s_vector.append(1)
+            else:
+                direction_s_vector.append(0)
         proj_gc_connections = np.empty_like(proj_s_vectors)
+        direction_connection_vector = []  # record the tuned direction of the gc_connection
         for i, gc_vector in enumerate(gc_connections):
-
             gc_vector = np.reshape(gc_vector, (new_dim, new_dim))  # reshape (n^2 x 1) vector to n x n vector
-            proj_gc_connections[i] = np.sum(gc_vector, axis=axis)  # sum over column/row
+            p = np.sum(gc_vector, axis=axis)  # sum over column/row
+            proj_gc_connections[i] = p
+            if np.amin(p) == 0:  # if the gc connection is tuned to this direction, record 1 else 0
+                direction_connection_vector.append(1)
+            else:
+                direction_connection_vector.append(0)
 
-        filtered = np.multiply(proj_gc_connections, proj_s_vectors)  # filter projected firing, by projected connections
-
-
-        #norm = np.sum(np.multiply(proj_s_vectors, proj_s_vectors), axis=1)  # compute unnormed firing at optimal case
-
+        # only calculate firing basing on the aligned gc modules to this direction
+        filtered = np.multiply(proj_s_vectors, proj_gc_connections)
         firing = 0.0
         num_firing = 0
         normal = np.multiply(proj_gc_connections, proj_gc_connections)
         set = [0, 1, 2, 3, 4, 5, 6]
-        #calculate weight of each module:
+        # calculate weight of each module:
         direction_norm = 0.0
-        #direction_y_norm = 0.0
+        same_weight = False
         weight = []
 
-        for i, k in enumerate(tuned_vector):
-            if k == current_direction:
+        for i, k in enumerate(direction_s_vector):
+            if k == 1 and direction_connection_vector[i] == 1:
                 direction_norm = direction_norm + (1.0 / gm_vector[i])
-        
+
         for i, g in enumerate(gm_vector):
-            if tuned_vector[i] == current_direction:
+            if direction_connection_vector[i] == 1 and direction_s_vector[i] == 1:
                 w = (1.0 / gm_vector[i]) / direction_norm
             else:
                 w = 0.0
             weight.append(w)
-        same_weight = False
+
         if same_weight:
-            weight = [1.0,1.0,1.0,1.0,1.0,1.0,1.0]
-        #weight = [1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+            weight = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+        # print( "the direction s vector of ",self.env_coordinates," on axis ", axis, " is ",direction_s_vector)
+        # print(direction_connection_vector)
+        # print(weight)
         for i, f in enumerate(filtered):
-            if tuned_vector[i] == current_direction and i in set:
-                firing += weight[i]*(np.sum(f) / np.sum(normal[i]))
+            if direction_connection_vector[i] == 1 and direction_s_vector[i] == 1 and i in set:
+                firing += weight[i] * (np.sum(f) / np.sum(normal[i]))
+
                 num_firing += 1
+        # print(firing)
         if same_weight:
             firing = firing / num_firing
-        #if np.sum(weight) > 1.1:
-            #firing = firing / num_firing
-        #firing -= 0.05
-
-        """
-        firing = 0
-        modules_firing = 0
-        for idx, filtered_vector in enumerate(filtered):
-            # We have to distinguish between modules tuned for x direction and modules tuned for y direction
-            if np.amin(filtered_vector) == 0:
-                # If tuned for right direction there will be clearly distinguishable spikes
-                firing = firing + np.sum(filtered_vector) / norm[idx]  # normalize firing and add to firing
-                modules_firing = modules_firing + 1
-        """
-
-        #if modules_firing == 0:
-        #    firing = 0
-        #else:
-         #   firing = firing/modules_firing  # divide by modules that we considered to get overall firing
 
         # Plotting options, used for linear lookahead debugging
         if plot:
