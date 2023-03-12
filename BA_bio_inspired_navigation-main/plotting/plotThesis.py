@@ -452,7 +452,7 @@ def add_environment(ax, env="plane", center_block=False):
         ax.add_artist(plot_box)
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
 
-#    if env=="plane_unstructured":
+    if env=="plane_unstructured":
         #the unstrctured map is: for trangels: 5 6 5 4 5 6
 
 

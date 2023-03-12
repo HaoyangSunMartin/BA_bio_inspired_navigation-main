@@ -12,7 +12,7 @@ here is the CUDA Implementation of the grid cell module:
 
 
 @cuda.jit
-def calculate_distance_CUDA_x(dimension, dis_matrix, de):
+def calculate_distance_CUDA(dimension, dis_matrix, de):
     # xx,yy is the absolute distance of the two dimensions in the neuron sheet
     xx, yy = dimension
     # make the distance between the edge neurons be one in the wrap around fashion
@@ -36,47 +36,6 @@ def calculate_distance_CUDA_x(dimension, dis_matrix, de):
             ay = ay - de
         if p == 2:
             ay = ay + de
-        if p == 3:
-            ax = ax - de
-        # calculate the absolute distance between A and B in a Wrap Around manner
-        dx = abs(ax - bx)
-        # if dx > (xx * 0.5):
-        #    dx = xx - dx
-        dx = min(dx, xx - dx)
-        dy = abs(ay - by)
-        # if dy > (yy * 0.5):
-        #    dy = yy - dy
-        dy = min(dy, yy - dy)
-        # write the distance to the matrix
-        dis_matrix[x, y] = (dx * dx) + (dy * dy)
-
-
-
-@cuda.jit
-def calculate_distance_CUDA_y(dimension, dis_matrix, de):
-    # xx,yy is the absolute distance of the two dimensions in the neuron sheet
-    xx, yy = dimension
-    # make the distance between the edge neurons be one in the wrap around fashion
-    xx = xx
-    yy = yy
-
-    x, y = cuda.grid(2)
-    if x < dis_matrix.shape[0] and y < dis_matrix.shape[1]:
-        # this thread corresponds to the calculation between neuron A(ax,ay) and B(bx,by)
-        ax = x % xx
-        ay = math.floor(x / xx)
-        bx = y % xx
-        by = math.floor(y / xx)
-        # get the preferred heading:
-        p = 2 * (ay % 2) + ax % 2
-        # tune the coordinate according to the preferred direction:
-        # [[-1, 0], [0, -1], [0, 1], [1, 0]]  # [W, S, N, E]
-        if p == 0:
-            ax = ax + de
-        if p == 1:
-            ay = ay + de
-        if p == 2:
-            ay = ay - de
         if p == 3:
             ax = ax - de
         # calculate the absolute distance between A and B in a Wrap Around manner
@@ -101,7 +60,7 @@ def rec_d_CUDA(dis_matrix, r, lamda):
 
 
 @cuda.jit
-def update_GC_CUDA_x(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
+def update_GC_CUDA(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
     # this function uses the weight matrix stored in the constant memory of the GPU
     # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
     x, y = cuda.grid(2)
@@ -140,46 +99,7 @@ def update_GC_CUDA_x(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E,
         s_vector[x, y] = tmp
 
 @cuda.jit
-def update_GC_CUDA_y(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
-    # this function uses the weight matrix stored in the constant memory of the GPU
-    # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
-    x, y = cuda.grid(2)
-    tau = time_parameters[0]
-    dt = time_parameters[1]
-
-    if x < s_vector.shape[0] and y < s_vector.shape[1]:
-        # the thread [x,y] is responsible for updating the neuron A[x,y]
-        gidx = x + y * s_vector.shape[0]  # get the correspondent index in the weight Matrix gidx
-        tmp = 0
-        # get the preferred direction
-        p = 2 * (y % 2) + x % 2
-
-        # tune the coordinate according to the preferred direction:
-        # [[-1, 0], [0, -1], [0, 1], [1, 0]]  # [W, S, N, E]
-        if p == 0:
-            dire = W
-        if p == 1:
-            dire = S
-        if p == 2:
-            dire = N
-        if p == 3:
-            dire = E
-        # do a matrix multiplication
-        for idx in range(w_matrix.shape[1]):
-            # translate the index in weight matrix to the index in s_vector matrix idx->[xx,yy]
-            xx = idx % s_vector.shape[0]
-            yy = int(math.floor(idx / s_vector.shape[0]))
-
-            tmp = tmp + s_vector[xx, yy] * w_matrix[gidx, idx]
-        tmp1 = dire[0] * x_movement + dire[1] * y_movement
-        tmp = tmp + 1.0 + 0.10315 * gm * tmp1
-        tmp = max(0, tmp)
-        tmp = (s_vector[x, y] + (tmp * dt / tau)) / (1 + (dt / tau))
-        cuda.syncthreads()
-        s_vector[x, y] = tmp
-
-@cuda.jit
-def update_GC_CUDA_x_Alternative(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
+def update_GC_CUDA_Alternative(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
     # this function uses the weight matrix stored in the constant memory of the GPU
     # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
     x, y = cuda.grid(2)
@@ -215,55 +135,14 @@ def update_GC_CUDA_x_Alternative(w_matrix, s_vector, x_movement, y_movement, gm,
         tmp = (s_vector[x, y] + (tmp * dt / tau)) / (1 + (dt / tau))
         cuda.syncthreads()
         s_vector[x, y] = tmp
-
-@cuda.jit
-def update_GC_CUDA_y_Alternative(w_matrix, s_vector, x_movement, y_movement, gm, W, N, S, E, time_parameters):
-    # this function uses the weight matrix stored in the constant memory of the GPU
-    # and the current s_vector and the movement vector to calculate the next s_vector of the GC module
-    x, y = cuda.grid(2)
-    tau = time_parameters[0]
-    dt = time_parameters[2]
-
-    if x < s_vector.shape[0] and y < s_vector.shape[1]:
-        # the thread [x,y] is responsible for updating the neuron A[x,y]
-        gidx = x + y * s_vector.shape[0]  # get the correspondent index in the weight Matrix gidx
-        tmp = 0
-        # get the preferred direction
-        p = 2 * (y % 2) + x % 2
-
-        # tune the coordinate according to the preferred direction:
-        # [[-1, 0], [0, -1], [0, 1], [1, 0]]  # [W, S, N, E]
-        if p == 0:
-            dire = W
-        if p == 1:
-            dire = S
-        if p == 2:
-            dire = N
-        if p == 3:
-            dire = E
-        # do a matrix multiplication
-        for idx in range(w_matrix.shape[1]):
-            # translate the index in weight matrix to the index in s_vector matrix idx->[xx,yy]
-            xx = idx % s_vector.shape[0]
-            yy = int(math.floor(idx / s_vector.shape[0]))
-
-            tmp = tmp + s_vector[xx, yy] * w_matrix[gidx, idx]
-        tmp = tmp + (1 + 0.10315 * gm * (dire[0] * x_movement + dire[1] * y_movement))
-        tmp = max(0, tmp)
-        tmp = (s_vector[x, y] + (tmp * dt / tau)) / (1 + (dt / tau))
-        cuda.syncthreads()
-        s_vector[x, y] = tmp
-
-
 
 
 
 
 class GridCellModule_CUDA:
-    def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1, tuned_direction = 'x'):
+    def __init__(self, sheetDimension, dt, gm=0.2, de=1.0, r=1.05, lamda=15, tau=1e-1):
         self.CUDA = True
-
-        self.tuned_direction = tuned_direction
+        print("This is GC_Module using CUDA")
         self.sheetDimension = sheetDimension
         self.weightMatrixDimension = (
         self.sheetDimension[0] * self.sheetDimension[1], self.sheetDimension[0] * self.sheetDimension[1])
@@ -306,7 +185,7 @@ class GridCellModule_CUDA:
         ##
 
         # declare the CUDA Structure for weightMatrix Manipulation
-        self.threadsPerBlock = (4, 4)
+        self.threadsPerBlock = (8, 8)
         blocksPerGrid_x = math.ceil(self.weightMatrixDimension[0] / self.threadsPerBlock[0])
         blocksPerGrid_y = math.ceil(self.weightMatrixDimension[1] / self.threadsPerBlock[1])
         self.blocksPerGrid = (blocksPerGrid_x, blocksPerGrid_y)
@@ -317,16 +196,9 @@ class GridCellModule_CUDA:
 
     def initializeWeightMatrix(self, data = None):
         if data is None:
-            if self.tuned_direction == 'x':
-                calculate_distance_CUDA_x[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension,
-                                                                                    self.d_weightMatrix,
-                                                                                    self.de)
-            else:
-                calculate_distance_CUDA_y[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension,
-                                                                                    self.d_weightMatrix,
-                                                                                    self.de)
+            calculate_distance_CUDA[self.blocksPerGrid, self.threadsPerBlock](self.sheetDimension, self.d_weightMatrix,
+                                                                              self.de)
             rec_d_CUDA[self.blocksPerGrid, self.threadsPerBlock](self.d_weightMatrix, self.r, self.lamda)
-            self.h_weightMatrix = self.d_weightMatrix.copy_to_host()
         else:
             self.h_weightMatrix = np.reshape(data["w"], self.weightMatrixDimension)
             self.d_weightMatrix = cuda.to_device(self.h_weightMatrix)
@@ -346,27 +218,14 @@ class GridCellModule_CUDA:
 
         #print("updating the gridCell module with gm: ", self.gm," with movement: ", xy_speed )
         if dt_alternative is None:
-            if self.tuned_direction == 'x':
-                update_GC_CUDA_x[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
-            else:
-                update_GC_CUDA_y[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
+
+            update_GC_CUDA[self.blocksPerGrid_sVector, self.threadsPerBlock] \
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
+                 self.time_parameters)
         else:
-            if self.tuned_direction=='x':
-                update_GC_CUDA_x_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
-            else:
-                update_GC_CUDA_x_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock] \
-                    (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S,
-                     self.E,
-                     self.time_parameters)
+            update_GC_CUDA_Alternative[self.blocksPerGrid_sVector, self.threadsPerBlock]\
+                (self.d_weightMatrix, self.d_sVector, xy_speed[0], xy_speed[1], self.gm, self.W, self.N, self.S, self.E,
+                 self.time_parameters)
 
 
     #this function should be called every time the model switches to virtual updates
