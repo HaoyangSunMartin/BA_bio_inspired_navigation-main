@@ -44,8 +44,8 @@ def automated_exploration(env):
     print("calling automated Exploration module")
 
 def get_exploration_trajectory(trag_coding = "Full_Exploration"):
-    sll = [1.0, 1.5]
-    slu = [1.0, 4.5]
+    sll = [1.5, 1.5]
+    slu = [1.5, 4.5]
     srl = [9.5, 1.5]
     sru = [9.5, 4.5]
     ing01 = [1.5, 4.5]
@@ -76,8 +76,8 @@ def get_exploration_trajectory(trag_coding = "Full_Exploration"):
     if trag_coding == "Full_Exploration":
         ##G01: [1.5, 4.5--7.5], G02: [3.5, 4.5--7.5], G03: [5.5, 4.5--7.5], G04: [7.5, 4.5--7.5], G05: [9.5, 4.5--7.5]
         goals = np.array([
-            #sll,
-            ing01,
+            # sll,
+            slu,
             # srl,
             sru,
             # sll,

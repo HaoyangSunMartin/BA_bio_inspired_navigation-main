@@ -456,7 +456,7 @@ def add_environment(ax, env="plane", center_block=False):
         #the unstrctured map is: for trangels: 5 6 5 4 5 6
 
 
-    for x in doors:
+#    for x in doors:
         plot_box = plt.Rectangle((x, 5.4), 1, 0.2, color=TUM_colors['TUMGray'])
         ax.add_artist(plot_box)
     boxes = [0, 2, 4, 6, 8, 10]

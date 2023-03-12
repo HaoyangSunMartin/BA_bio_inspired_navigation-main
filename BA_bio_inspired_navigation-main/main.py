@@ -31,10 +31,10 @@ import time
 #####Testing Ground For Python-start
 
 
-generate = False
+generate = True
 
 
-D_Star_Lite = True
+D_Star_Lite = False
 
 if D_Star_Lite:
     start_timer = time.time()
@@ -57,7 +57,7 @@ mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 SIMPLE = True
 Conventional = None
 
-visualize = True
+visualize = False
 from_data = True
 use_CUDA = False
 bc_enabled =False
@@ -71,7 +71,7 @@ conventional = False
 
 goal_idx = 26
 
-env_coding = "plane_doors_huge"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #

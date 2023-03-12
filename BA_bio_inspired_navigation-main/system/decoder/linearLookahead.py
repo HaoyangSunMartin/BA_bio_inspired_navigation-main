@@ -3,15 +3,22 @@ from plotting.plotResults import export_linear_lookahead_video
 from plotting.plotThesis import plot_sub_goal_localization
 
 
+
+
 def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=False, plotting=False, goal_pc_idx=None):
     """Performs a linear lookahead to find an offset in grid cell spiking in either x or y direction."""
-    return [-4.72, 9.28]
+
+    CUDA = gc_network.CUDA
+    if CUDA:
+        gc_network.prepare_virtual()
+
     if goal_pc_idx is None:
         print("LLA_2X target is none, performing global search")
     else:
         print("LLA_2X identifies: PC Nr. ", goal_pc_idx, " as target")
 
-    gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
+    if gc_network.gc_modules[0].CUDA:
+        gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
 
     ###delete this
     current_pos = env.xy_coordinates[-1]
@@ -24,6 +31,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
     dt = gc_network.dt * 2  # checks spiking only every nth step
     speed = 0.5  # match actual speed
+
     xy_speeds = np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed# np.array(([1, 0], [-1, 0], [0, 1], [0, -1])) * speed
     goal_spiking = {}  # "axis": {"reward_value", "idx_place_cell", "distance", "step"}
 
@@ -37,8 +45,14 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
     for idx, xy_speed in enumerate(xy_speeds):
         print("performing LLA2x in direction: ", xy_speed)
+
         axis = int(idx / 2)  # either x or y (0 for x, 1 for y)
 
+        if CUDA:# for CUDA it is the opposite
+            if axis == 0:
+                axis = 1
+            else:
+                axis = 0
         reward_array = []  # save rewards during lookahead, to create lookahead video
         goal_found = None
 
@@ -64,9 +78,9 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 # Only look for one specific place cell (goal location)
                 s_vectors = gc_network.consolidate_gc_spiking(virtual=True)
                 # computes projected pc firing
-                firing = pc_network.place_cells[goal_pc_idx].compute_firing_2x(s_vectors, axis, tuned_vector= gc_network.tuned_vector, gm_vector=gc_network.gm_vector )
-                if i % 20 == 0:
-                    print("current step: ", i, " current firing: ", firing)
+                firing = pc_network.place_cells[goal_pc_idx].compute_firing_2x(s_vectors, axis, tuned_vector= gc_network.tuned_vector, gm_vector=gc_network.gm_vector)
+                #if i % 20 == 0:
+                #    print("current step: ", i, " current firing: ", firing)
                 # make sure that firing is strong enough
                 ###changes by Haoyang Sun
                 reward = firing if firing > cognitive_map.active_threshold else 0.0#cognitive_map.active_threshold else 0
@@ -75,7 +89,13 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
             ###changes by Haoyang Sun - start
             ###changes by Haoyang Sun - end
             reward_array.append(reward)
-            distance = xy_speed[axis] * i * dt  # lookahead distance
+            index = axis
+            if CUDA:
+                if index ==1 :
+                    index = 0
+                else:
+                    index =1
+            distance = xy_speed[index] * i * dt  # lookahead distance
             if axis not in goal_spiking or reward - goal_spiking[axis]["reward"] > 0:
                 # First entrance or exceeds previous found value
                 goal_spiking[axis] = {"reward": reward, "idx_place_cell": idx_place_cell,
@@ -84,9 +104,10 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 #print("found new reward location with reward: ", reward, " at step: ", i)
             # Abort conditions to end lookahead earlier
             if axis in goal_spiking and i > 50 and reward < 0.85 * goal_spiking[axis]["reward"]\
-                    and goal_spiking[axis]["reward"] > 0.9:
+                    and goal_spiking[axis]["reward"] > 0.90:
                 # To make sure that looks sufficiently in all 4 directions add this above
                 # and np.sign(goal_spiking[axis]["distance"]) == np.sign(distance) \
+                print("BREAK!, current step: ",i," Current Goal Spiking",goal_spiking)
                 break
             gc_network.track_movement(xy_speed, virtual=True, dt_alternative=dt)  # track virtual movement
             ###delete this
@@ -110,21 +131,12 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
         gc_network.reset_s_virtual()  # reset after lookahead in a direction
 
-        ###delete this
-        current_pos = env.xy_coordinates[-1]
-        ###
-
     goal_vector = np.array([axis["distance"] for axis in goal_spiking.values()])  # consolidate goal vector from dict
-
 
 
     print("------ Goal localization at time-step: ", len(env.xy_coordinates) - 1)
     print("current method: Linear Look Ahead 2X")
 
-    ###delete this
-    print("distance of max reward pos: ", max_reward_pos)
-    print("reward signal:", max_reward)
-    ###
 
     if len(goal_vector) != 2:
         # Something went wrong and no goal vector was found
@@ -145,11 +157,13 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
 def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     """Performs a linear lookahead in a preset direction"""
-    if not gc_network.CUDA:
+    #gc_network.prepare_virtual()
+    if not gc_network.gc_modules[0].CUDA:
         gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
 
-    dt = gc_network.dt * 10  # checks spiking only every nth step
-    speed = 0.5  # lookahead speed, becomes unstable for large speeds
+
+    dt = gc_network.dt * 2  # checks spiking only every nth step
+    speed = 0.5  # This matches the actual speed during the navigation(around 0.55m/s)
     #this can be the main reason causing the slow reaction
 
     angles = np.linspace(0, 2 * np.pi, num=env.num_ray_dir, endpoint=False)  # lookahead directions

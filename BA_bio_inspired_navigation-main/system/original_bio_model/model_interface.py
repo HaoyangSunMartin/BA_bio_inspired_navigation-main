@@ -3,13 +3,18 @@ from system.controller.explorationPhase import compute_exploration_goal_vector
 from system.controller.navigationPhase import compute_navigation_goal_vector
 from plotting.plotResults import *
 from plotting.plotThesis import *
+import matplotlib.animation as animation
+import os
+import matplotlib.pyplot as plt
+from numba import jit
 
 class Bio_Model:
 
-    def __init__(self,trag_coding = "Full_Exploration", gc_network = None, env = None,pc_network = None, cognitive_map = None, nr_plots = 5,nr_steps = 8000, goal_idx = 255, bc_enabled = False, video= False, spike_detector = None,pod_network = None,construct_new_cognitive_map = False, nr_steps_exploration=0):
+    def __init__(self,trag_coding = "Full_Exploration", gc_network = None, env = None,pc_network = None, cognitive_map = None, nr_plots = 5,nr_steps = 8000, goal_idx = 255, bc_enabled = False, video= False, spike_detector = None,pod_network = None,construct_new_cognitive_map = False, nr_steps_exploration=0, fps= 5,step=1):
         self.trag_coding = trag_coding
         self. video = video
-        self.step = 1
+        self.fps = fps
+        self.step = step
         self.nr_steps_exploration = nr_steps_exploration
         self.env = env
         self.gc_network = gc_network
@@ -22,10 +27,14 @@ class Bio_Model:
         self.bc_enabled = bc_enabled
         self.vector_model = "linear_lookahead"
         self.bc_list = None
-        self.goal_idx = 255
+        self.goal_idx = goal_idx
         self.nr_steps = nr_steps
         self.nr_plots = nr_plots
         [self.fig, self.f_gc, self.f_t, self.f_mon] = layout_video()
+        self.anim =None
+        self.start_timer=None
+        self.end_timer=None
+
 
     def animation_frame(self, frame):
         if self.video:
@@ -56,9 +65,14 @@ class Bio_Model:
             # compute velocity vector
             self.env.compute_movement(self.gc_network, self.pc_network, self.cognitive_map, exploration_phase=exploration_phase)
             xy_speed = self.env.xy_speeds[-1]
+            #print(xy_speed)
 
             # grid cell network track movement
+
             self.gc_network.track_movement(xy_speed)
+            #if i % 1000 == 0:
+            #    self.plot_GC_Projection_2(self.gc_network)
+            #    print("Step: ", i," Current tuned direction is: ", self.check_tuned_direction_vector(self.gc_network))
 
             # place cell network track gc firing
             goal_distance = np.linalg.norm(self.env.xy_coordinates[-1] - self.env.goal_location)
@@ -112,10 +126,76 @@ class Bio_Model:
         if self.video:
             # export current state as frame
             exploration_phase = True if frame < self.nr_steps_exploration else False
-            plot_current_state(self.env, self.gc_network.gc_modules, f_gc, f_t, f_mon,
+            plot_current_state(self.env, self.gc_network.gc_modules, self.f_gc, self.f_t, self.f_mon,
                                pc_network=self.pc_network, cognitive_map=self.cognitive_map,
                                exploration_phase=exploration_phase, goal_vector=self.goal_vector_array[-1])
             progress_str = "Progress: " + str(int((frame * 100) / self.nr_steps)) + "% | Current video is: " + str(
-                frame * dt) + "s long"
+                frame * self.dt) + "s long"
             print(progress_str)
 
+    def make_animation(self):
+        frames = np.arange(0, self.nr_steps, self.step)
+        self.anim = animation.FuncAnimation(self.fig, func=self.animation_frame, frames=frames, interval=1 / self.fps, blit=False)
+
+        # Finished simulation
+
+        # Export video
+        directory = "videos/"
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        f = "videos/animation.mp4"
+        video_writer = animation.FFMpegWriter(fps=self.fps)
+        self.anim.save(f, writer=video_writer)
+        self.env.end_simulation()
+
+    def plot_GC_Projection(self):
+
+        new_dim = self.gc_network.n
+        fig, axs = plt.subplots(2, len(self.gc_network.gc_modules))
+        for axis in range(2):
+            proj_s_vectors = []
+            for i, gc in enumerate(self.gc_network.gc_modules):
+                s = gc.get_s()
+                if not gc.CUDA:
+                    s = np.reshape(s, (new_dim, new_dim))  # reshape (n^2 x 1) vector to n x n vector
+                axs[axis][i].set_title("Nr " + str(i)+" Dir: " + str(gc.tuned_direction) + " on axis " + str(axis))
+                pro = np.sum(s, axis=axis)
+                axs[axis][i].barh(range(new_dim), pro)
+                print(i, "  ", axis, "   ", np.sum(pro))
+
+        plt.show()
+
+    def plot_GC_Projection_2(self, gc_network):
+        fig, axs = plt.subplots(2, len(gc_network.gc_modules))
+        new_dim = gc_network.n
+        for axis in range(2):
+            proj_s_vectors = []
+            for i, gc in enumerate(gc_network.gc_modules):
+                s = np.reshape(gc.get_s(virtual=False), (new_dim, new_dim))  # reshape (n^2 x 1) vector to n x n vector
+                axs[axis][i].set_title(
+                    "neural sheet Nr. " + str(i) + " on axis " + str(axis))
+                pro = np.sum(s, axis=axis)
+                axs[axis][i].barh(range(new_dim), pro)
+                # print(i, "  ", axis, "   ", np.sum(pro))
+        plt.show()
+
+    def check_tuned_direction_vector(self,gc_network):
+        direction_vector = []
+        new_dim = gc_network.n
+        for gc in gc_network.gc_modules:
+            s = gc.get_s(virtual=False)
+            filter = np.where(s > 0.1, 1.0, 0.0)
+            s = np.multiply(s, filter)
+            s = np.reshape(s, (new_dim, new_dim))
+
+            # s_filtered = np.where(s>0.1, 1, 0)
+            decided = False
+            for axis in range(2):
+                dir = 'x' if axis == 0 else 'y'
+                pro = np.sum(s, axis=axis)
+                # print("current direction is ", dir, " argmin is ", np.amin(pro))
+                if np.amin(pro) == 0 and not decided:
+                    direction_vector.append(dir)
+                    decided = True
+        return direction_vector

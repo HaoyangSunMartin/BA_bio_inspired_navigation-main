@@ -264,12 +264,13 @@ class GridCellModule:
 class GridCellNetwork:
     """GridCellNetwork holds all Grid Cell Modules"""
     def __init__(self, n, M, dt, gmin, gmax=None, from_data=False, randomized_init =False):
-        self.CUDA=False
+        self.CUDA = False
         self.gc_modules = []  # array holding objects GridCellModule
         self.dt = dt
         self.random_init = randomized_init
         self.tuned_vector = []
         self.gm_vector = []
+        self.n = n
         if not from_data:
             # Create new GridCellModules
             for i, m in enumerate(range(M)):
@@ -287,7 +288,7 @@ class GridCellNetwork:
             for i in self.gc_modules:
                 self.tuned_vector.append(i.tuned_direction)
             self.save_gc_model()
-            nr_steps_init = 2000
+            nr_steps_init = 1000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
 
         else:
@@ -307,6 +308,9 @@ class GridCellNetwork:
             self.load_initialized_network("s_vectors_initialized.npy")
 
         self.set_current_as_target_state()  # by default home-base is set as goal vector
+
+
+
 
 
     def track_movement(self, xy_speed, virtual=False, dt_alternative=None):
@@ -346,8 +350,8 @@ class GridCellNetwork:
                 self.track_movement(xy_speed)
             print("Finished Initialization of nr_steps:", nr_steps)
 
-        plot_grid_cell_modules(self.gc_modules, nr_steps)
-        plot_3D_sheets(self.gc_modules, nr_steps)
+        #plot_grid_cell_modules(self.gc_modules, nr_steps)
+        #plot_3D_sheets(self.gc_modules, nr_steps)
 
         self.save_gc_spiking(filename)
 
