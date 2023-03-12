@@ -18,9 +18,9 @@ def get_environment2():
     grid = np.zeros((40,40), dtype=np.uint8)
     for x in range(20,30):
         for xx in range(20,30):
-            grid[x][xx]=OBSTACLE
-    start = (0,0)
-    goal = (35,35)
+            grid[39-x][xx]=OBSTACLE
+    start = (39-0,0)
+    goal = (39-35,35)
     return grid, start, goal
 
 def get_environment(env="plane_doors"):
@@ -40,14 +40,14 @@ def get_environment(env="plane_doors"):
         rec = [10,2]
         for i in range(base_coor[0],base_coor[0]+rec[0]):
             for ii in range(base_coor[1], base_coor[1] + rec[1]):
-                grid[109-ii][i] = OBSTACLE
+                grid[ii][i] = OBSTACLE#grid[109-ii][i] = OBSTACLE
     boxes = [0, 2, 4, 6, 8, 10]
     for x in boxes:
         base_coor = [x*10,50]
         rec = [10,20]
         for i in range(base_coor[0],base_coor[0]+rec[0]):
             for ii in range(base_coor[1], base_coor[1]+rec[1]):
-                grid[109 - ii][i] = OBSTACLE
+                grid[ii][i] = OBSTACLE#grid[109 - ii][i] = OBSTACLE
 
 
     boxes = [1, 3, 5, 7, 9]
@@ -56,10 +56,11 @@ def get_environment(env="plane_doors"):
         rec = [10, 10]
         for i in range(base_coor[0],base_coor[0]+rec[0]+1):
             for ii in range(base_coor[1], base_coor[1] + rec[1] + 1):
-                grid[109 - ii][i] = OBSTACLE
+                grid[ii][i] = OBSTACLE#grid[109 - ii][i] = OBSTACLE
 
-    start = (109 - 6,55)
-    goal = (109 - 100,15)
+    start = (6,55)#(109 - 6,55)
+    goal = (100,15)#(109 - 100,15)
+
 
     return grid, start, goal
 

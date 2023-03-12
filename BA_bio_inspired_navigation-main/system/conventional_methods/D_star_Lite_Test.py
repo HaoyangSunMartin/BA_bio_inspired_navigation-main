@@ -8,9 +8,9 @@ class Test:
 
 
 
-        view_range = 3
+        view_range = 11
 
-        grid, start, goal = get_environment2()
+        grid, start, goal = get_environment()
         x_dim = grid.shape[0]
         y_dim = grid.shape[1]
 
@@ -58,13 +58,13 @@ class Test:
     def play(self):
         # move and compute path
         path, g, rhs = self.dstar.move_and_replan(robot_position=self.new_position)
-
+        nr_step = 0
         while not self.gui.done:
             # update the map
             # print(path)
             # drive gui
             self.gui.run_game(path=path)
-
+            nr_step+=1
             self.new_position = self.gui.current
             new_observation = self.gui.observation
             new_map = self.gui.world
@@ -92,3 +92,4 @@ class Test:
 
                 # d star
                 path, g, rhs = self.dstar.move_and_replan(robot_position=self.new_position)
+        return nr_step

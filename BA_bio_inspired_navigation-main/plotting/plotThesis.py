@@ -443,13 +443,19 @@ def add_environment(ax, env="plane", center_block=False):
         "plane_doors_3" : [1, 3, 7],
         "plane_doors_4" : [1, 3, 5],
         "plane_doors_5c_3o" : [1, 3, 7, 9],
-        "plane" : [ ]
-
+        "plane" : [ ],
+        "plane_unstructured" : [],
+        "plane_doors_huge" : []
     }
     if center_block:
         plot_box = plt.Rectangle((2,2.5 ), 8, 1, color=TUM_colors['TUMLightGray'])
         ax.add_artist(plot_box)
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
+
+    if env=="plane_unstructured":
+        #the unstrctured map is: for trangels: 5 6 5 4 5 6
+
+
     for x in doors:
         plot_box = plt.Rectangle((x, 5.4), 1, 0.2, color=TUM_colors['TUMGray'])
         ax.add_artist(plot_box)

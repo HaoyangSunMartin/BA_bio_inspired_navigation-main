@@ -34,12 +34,15 @@ import time
 generate = False
 
 
-D_Star_Lite = False
+D_Star_Lite = True
 
 if D_Star_Lite:
+    start_timer = time.time()
     test = Test(env_coding="", prior_knowledge_encoding= "", connectivity_style= "", interactive=False)
-    test.play()
-
+    nr_step = test.play()
+    end_timer=time.time()
+    print("D* Lite used ", end_timer-start_timer, " seconds in total")
+    print("The path length of D* Lite is: ", nr_step/10)
 
 
 #####Testing Ground For Python-end
@@ -54,7 +57,7 @@ mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 SIMPLE = True
 Conventional = None
 
-visualize = False
+visualize = True
 from_data = True
 use_CUDA = False
 bc_enabled =False
@@ -68,7 +71,7 @@ conventional = False
 
 goal_idx = 26
 
-env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane_doors_huge"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #
