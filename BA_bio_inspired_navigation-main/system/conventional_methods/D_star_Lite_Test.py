@@ -4,13 +4,17 @@ from system.conventional_methods.grid import OccupancyGridMap, SLAM, get_environ
 
 
 class Test:
-    def __init__(self, env_coding="", prior_knowledge_encoding= "", connectivity_style= "", interactive = False):
+    def __init__(self, ground_truth_env="plane_doors", prior_knowledge_env= "plane", interactive = True, scale=1, view_range=7):
 
 
+        self.scale=scale
+        view_range = view_range
+        #this is the map during that navigation
+        grid, start, goal = get_environment(env=ground_truth_env, scale=self.scale)
+        # this is the map during the exploration
+        grid2, _, _ = get_environment(env=prior_knowledge_env, scale=self.scale)
 
-        view_range = 11
 
-        grid, start, goal = get_environment()
         x_dim = grid.shape[0]
         y_dim = grid.shape[1]
 
@@ -22,8 +26,8 @@ class Test:
         if interactive:
 
             self.gui = Animation(title="D* Lite Path Planning",
-                            width=7,
-                            height=7,
+                            width=int(7/self.scale),
+                            height=int(7/self.scale),
                             margin=0,
                             x_dim=x_dim,
                             y_dim=y_dim,
@@ -32,11 +36,10 @@ class Test:
                             viewing_range=view_range,
                             own_map=grid)
         else:
-            self.gui = NoAnimation(title="D* Lite Path Planning",width=7,height=7,margin=0,x_dim=x_dim,y_dim=y_dim,start=start,goal=goal, viewing_range=view_range,own_map=grid)
+            self.gui = NoAnimation(title="D* Lite Path Planning",width=int(7/self.scale),height=int(7/self.scale),margin=0,x_dim=x_dim,y_dim=y_dim,start=start,goal=goal, viewing_range=view_range,own_map=grid)
 
         self.new_map = self.gui.world
 
-        grid2, _, _ = get_environment("plane_doors_2")
 
         self.old_map = OccupancyGridMap(x_dim, y_dim, own_map=grid2)
 

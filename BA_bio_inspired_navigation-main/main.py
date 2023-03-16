@@ -31,14 +31,47 @@ import time
 #####Testing Ground For Python-start
 
 
-generate = True
+generate = False
 
+"""
+randomized_init=False
+from_data=False
+dt = 1e-2  # in seconds, use 1e-2 for sufficient results
+M = 7  # 6 for default, number of modules
+n = 40  # 40 for default, size of sheet -> nr of neurons is squared
+gmin = 0.2  # 0.2 for default, maximum arena size, 0.5 -> ~10m | 0.05 -> ~105m
+gmax = 2.4 # 2.4 for default, determines resolution, dont pick to high (>2.4 at speed = 0.5m/s)
+# note that if gc modules are created from data n and M are overwritten
+use_CUDA=False
+start_timer=time.time()
+if use_CUDA:
+    gc_network = GridCellNetwork_CUDA(n, M, dt, gmin, gmax=gmax, from_data=from_data)
+else:
+    gc_network = GridCellNetwork(n, M, dt, gmin, gmax=gmax, from_data=from_data, randomized_init = randomized_init)
+end_timer=time.time()
+if use_CUDA:
+    print("the CUDA Module takes: ", end_timer-start_timer," seconds")
+else:
+    print("the Linear Module takes: ", end_timer-start_timer, " seconds")
 
-D_Star_Lite = False
+use_CUDA=True
+start_timer=time.time()
+if use_CUDA:
+    gc_network = GridCellNetwork_CUDA(n, M, dt, gmin, gmax=gmax, from_data=from_data)
+else:
+    gc_network = GridCellNetwork(n, M, dt, gmin, gmax=gmax, from_data=from_data, randomized_init = randomized_init)
+end_timer=time.time()
+if use_CUDA:
+    print("the CUDA Module takes: ", end_timer-start_timer," seconds")
+else:
+    print("the Linear Module takes: ", end_timer-start_timer, " seconds")
+"""
+
+D_Star_Lite = True
 
 if D_Star_Lite:
     start_timer = time.time()
-    test = Test(env_coding="", prior_knowledge_encoding= "", connectivity_style= "", interactive=False)
+    test = Test(ground_truth_env="plane_doors", prior_knowledge_env= "plane", interactive=True,scale=0.7, view_range=7)
     nr_step = test.play()
     end_timer=time.time()
     print("D* Lite used ", end_timer-start_timer, " seconds in total")

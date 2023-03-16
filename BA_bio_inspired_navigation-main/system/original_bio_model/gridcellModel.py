@@ -278,9 +278,9 @@ class GridCellNetwork:
                 gm = compute_gm(m, M, gmin, gmax)
                 self.gm_vector.append(gm)
                 if i % 2 == 0:
-                    direction = 'x'
-                else:
                     direction = 'y'
+                else:
+                    direction = 'x'
                 gc = GridCellModule(n, gm, dt, tuned_direction=direction)
                 self.gc_modules.append(gc)
                 print("Created GC module with gm", gc.gm, " tuned to the direction ", direction )
@@ -288,7 +288,7 @@ class GridCellNetwork:
             for i in self.gc_modules:
                 self.tuned_vector.append(i.tuned_direction)
             self.save_gc_model()
-            nr_steps_init = 1000
+            nr_steps_init = 10000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
 
         else:

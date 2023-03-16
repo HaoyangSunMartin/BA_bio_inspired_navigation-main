@@ -146,7 +146,7 @@
 
   <link name="rectangle_1">
   	<visual>
-      <origin rpy="0 0 0" xyz="0.5 6 0"/>
+      <origin rpy="0 0 0" xyz="0.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -155,7 +155,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="0.5 6 0"/>
+      <origin rpy="0 0 0" xyz="0.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -202,7 +202,7 @@
 
   <link name="rectangle_3">
   	<visual>
-      <origin rpy="0 0 0" xyz="4.5 6 0"/>
+      <origin rpy="0 0 0" xyz="4.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -211,7 +211,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="4.5 6 0"/>
+      <origin rpy="0 0 0" xyz="4.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -230,7 +230,7 @@
 
   <link name="rectangle_4">
   	<visual>
-      <origin rpy="0 0 0" xyz="6.5 6 0"/>
+      <origin rpy="0 0 0" xyz="6.5 4 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -239,7 +239,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="6.5 6 0"/>
+      <origin rpy="0 0 0" xyz="6.5 4 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -258,7 +258,7 @@
 
   <link name="rectangle_5">
   	<visual>
-      <origin rpy="0 0 0" xyz="8.5 6 0"/>
+      <origin rpy="0 0 0" xyz="8.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -267,7 +267,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="8.5 6 0"/>
+      <origin rpy="0 0 0" xyz="8.5 5 0"/>
       <geometry>
 	 	<box size="1 2 1"/>
       </geometry>
@@ -342,7 +342,7 @@
 
   <link name="box_2">
   	<visual>
-      <origin rpy="0 0 0" xyz="3.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="3.5 9.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -351,7 +351,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="3.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="3.5 9.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -370,7 +370,7 @@
 
   <link name="box_3">
   	<visual>
-      <origin rpy="0 0 0" xyz="5.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="5.5 8.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -379,7 +379,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="5.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="5.5 8.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -398,7 +398,7 @@
 
   <link name="box_4">
   	<visual>
-      <origin rpy="0 0 0" xyz="7.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="7.5 8.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -407,7 +407,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="7.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="7.5 8.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -426,7 +426,7 @@
 
   <link name="box_5">
   	<visual>
-      <origin rpy="0 0 0" xyz="9.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="9.5 9.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -435,7 +435,7 @@
 	  </material>
     </visual>
     <collision>
-      <origin rpy="0 0 0" xyz="9.5 8.5 0"/>
+      <origin rpy="0 0 0" xyz="9.5 9.0 0"/>
       <geometry>
 	 	<box size="1 1 1"/>
       </geometry>
@@ -445,119 +445,6 @@
       <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
     </inertial>
   </link>
-
-     <joint name="door_1_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="planeLink"/>
-    <child link="door_1"/>
-  </joint>
-
-  <link name="door_1">
-  	<visual>
-      <origin rpy="0 0 0" xyz="1.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-      <material name="grey_dark">
-	    <color rgba="0.5 0.5 0.5 1"/>
-	  </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="1.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="1"/>
-      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
-    </inertial>
-  </link>
-
-    <joint name="door_2_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="planeLink"/>
-    <child link="door_2"/>
-  </joint>
-
-  <link name="door_2">
-  	<visual>
-      <origin rpy="0 0 0" xyz="3.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-      <material name="grey_dark">
-	    <color rgba="0.5 0.5 0.5 1"/>
-	  </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="3.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="1"/>
-      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
-    </inertial>
-  </link>
-
-    <joint name="door_3_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="planeLink"/>
-    <child link="door_3"/>
-  </joint>
-
-  <link name="door_3">
-  	<visual>
-      <origin rpy="0 0 0" xyz="5.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-      <material name="grey_dark">
-	    <color rgba="0.5 0.5 0.5 1"/>
-	  </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="5.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="1"/>
-      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
-    </inertial>
-  </link>
-
-    <joint name="door_4_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <parent link="planeLink"/>
-    <child link="door_4"/>
-  </joint>
-
-  <link name="door_4">
-  	<visual>
-      <origin rpy="0 0 0" xyz="7.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-      <material name="grey_dark">
-	    <color rgba="0.5 0.5 0.5 1"/>
-	  </material>
-    </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="7.5 5.5 0"/>
-      <geometry>
-	 	<box size="1 0.2 1"/>
-      </geometry>
-    </collision>
-    <inertial>
-      <mass value="1"/>
-      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
-    </inertial>
-  </link>
-
 
 </robot>
 

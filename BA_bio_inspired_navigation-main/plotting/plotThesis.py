@@ -443,29 +443,38 @@ def add_environment(ax, env="plane", center_block=False):
         "plane_doors_3" : [1, 3, 7],
         "plane_doors_4" : [1, 3, 5],
         "plane_doors_5c_3o" : [1, 3, 7, 9],
-        "plane" : [ ],
-        "plane_unstructured" : [],
-        "plane_doors_huge" : []
+        "plane": [],
+        "plane_unstructured": [],
+        "plane_doors_huge": []
     }
     if center_block:
         plot_box = plt.Rectangle((2,2.5 ), 8, 1, color=TUM_colors['TUMLightGray'])
         ax.add_artist(plot_box)
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
-
+    triangel_y=None
+    box_y =None
+    door_y = None
     if env=="plane_unstructured":
-        #the unstrctured map is: for trangels: 5 6 5 4 5 6
+        #the unstrctured map is: for triangels: 5 6 5 4 5 6
+        #                        for boxes: 8.5 9.0 8.0 8.0 9.0
+        triangel_y = [4.0,5.0,4.0,3.0,4.0,5.0]
+        box_y =[8,8.5,7.5,7.5,8.5]
+        door_y = []
+    else:
+        triangel_y = [5,5,5,5,5,5]
+        box_y = [8,8,8,8,8]
+        door_y = []
 
-
-#    for x in doors:
+    for x in doors:
         plot_box = plt.Rectangle((x, 5.4), 1, 0.2, color=TUM_colors['TUMGray'])
         ax.add_artist(plot_box)
     boxes = [0, 2, 4, 6, 8, 10]
-    for x in boxes:
-        plot_box = plt.Rectangle((x, 5), 1, 2, color=TUM_colors['TUMLightGray'])
+    for i, x in enumerate(boxes):
+        plot_box = plt.Rectangle((x, triangel_y[i]), 1, 2, color=TUM_colors['TUMLightGray'])
         ax.add_artist(plot_box)
     boxes = [1, 3, 5, 7, 9]
-    for x in boxes:
-        plot_box = plt.Rectangle((x, 8), 1, 1, color=TUM_colors['TUMLightGray'])
+    for i, x in enumerate(boxes):
+        plot_box = plt.Rectangle((x, box_y[i]), 1, 1, color=TUM_colors['TUMLightGray'])
         ax.add_artist(plot_box)
     plot_box = plt.Rectangle((-0.1, -0.1), 11.2, 11.2, color=TUM_colors['TUMLightGray'], fc='none',
                              ec=TUM_colors['TUMLightGray'], linewidth=5)

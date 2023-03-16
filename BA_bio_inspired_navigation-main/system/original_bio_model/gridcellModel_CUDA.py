@@ -436,7 +436,7 @@ class GridCellNetwork_CUDA:
                 self.tuned_vector.append(direction)
                 print("Created GC module with gm", gc.gm, " tuned to the direction ", direction )
 
-            nr_steps_init = 1000
+            nr_steps_init = 10000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
             self.save_gc_model()
 
