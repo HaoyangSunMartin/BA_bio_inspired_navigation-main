@@ -288,7 +288,7 @@ class GridCellNetwork:
             for i in self.gc_modules:
                 self.tuned_vector.append(i.tuned_direction)
             self.save_gc_model()
-            nr_steps_init = 10000
+            nr_steps_init = 2000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
 
         else:

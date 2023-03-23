@@ -45,9 +45,9 @@ def automated_exploration(env):
 
 def get_exploration_trajectory(trag_coding = "Full_Exploration"):
     sll = [1.5, 1.5]
-    slu = [1.5, 4.5]
+    slu = [2.5, 4.5]
     srl = [9.5, 1.5]
-    sru = [9.5, 4.5]
+    sru = [10.5, 4.5]
     ing01 = [1.5, 4.5]
     outg01 = [1.5, 7.5]
     ing02 = [3.5, 4.5]
@@ -137,6 +137,41 @@ def get_exploration_trajectory(trag_coding = "Full_Exploration"):
 
 
         ])
+    elif trag_coding=="Thesis":
+        goals = np.array([
+
+            #ing02,
+            sru,
+            #slu,
+            ing05,
+            outg05,
+            outg04,
+            ing04,
+            ing03,
+            outg03,
+            outg02,
+            ing02,
+            slu,
+            ing05,
+            outg05,
+            outg02,
+            en01,
+            ex01,
+            ex02,
+            en02,
+            en03,
+            ex03,
+            ex04,
+            en04,
+            en05,
+            ex05,
+            ex06,
+            en06,
+            outg05,
+            ing05
+
+        ])
+
     elif trag_coding=="simple_FULL":
         goals = np.array([
             [5.5, 4.5],
@@ -163,39 +198,38 @@ def get_exploration_trajectory(trag_coding = "Full_Exploration"):
             [6.5, 10],
             [8.5, 10],
             [8.5, 7.5],
-            [9.5, 7.5],
+            [9.5, 7.5]
 
-            outg04,
-            ing04,
-            ing03,
-            outg03,
-            outg02,
-            ing02,
-            ing01,
-            outg01
-
+            #outg04,
+            #ing04,
+            #ing03,
+            #outg03,
+            #outg02,
+            #ing02,
+            #ing01,
+            #outg01
         ])
     elif trag_coding=="unstructured":
-        p1 = [1.5,3]
-        p2=[3.5,3]
-        p3=[5.5,3]
-        p4=[5.5,1.5]
-        p5=[7.5,1.5]
-        p6=[7.5,3]
-        p7=[9.5,3]
-        p8=[9.5,7.5]
-        p9=[10.5,7.5]
-        p10=[10.5,10]
-        p11=[8.5,10]
-        p12=[6.5,10]
-        p13=[4.5,10]
-        p14=[2.5,10]
-        p15=[0.5,10]
-        p16=[0.5,7.5]
-        p17=[1,5,7,5]
-        p18=[3.5,7.5]
-        p19=[5.5,6.5]
-        p20=[7.5,6.5]
+        p1 = [1.5, 2.5]
+        p2 = [3.5, 2.5]
+        p3 = [5.5, 2.5]
+        p4 = [5.5, 1.5]
+        p5 = [7.5, 1.5]
+        p6 = [7.5, 2.5]
+        p7 = [9.5, 2.5]
+        p8 = [9.5, 7.5]
+        p9 = [10.5, 7.5]
+        p10 = [10.5, 10]
+        p11 = [8.5, 10]
+        p12 = [6.5, 10]
+        p13 = [4.5, 10]
+        p14 = [2.5, 10]
+        p15 = [0.5, 10]
+        p16 = [0.5, 7.5]
+        p17 = [1.5, 7.5]
+        p18 = [3.5, 7.5]
+        p19 = [5.5, 6.5]
+        p20 = [7.5, 6.5]
         goals = np.array([
             p1,
             p2,
@@ -204,7 +238,7 @@ def get_exploration_trajectory(trag_coding = "Full_Exploration"):
             p5,
             p6,
             p7,
-            p8,p9,p10,p11,p12,p13,p14,p15,p16,p17,p1,p2,p18,p19,p4,p5,p20,p8,p18,p16
+            p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p1, p2, p18, p19, p4, p5, p20, p8, p20, p16
         ])
     else:
         goals = np.array([

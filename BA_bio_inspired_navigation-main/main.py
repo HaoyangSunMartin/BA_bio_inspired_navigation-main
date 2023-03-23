@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from system.controller.pybulletEnv import PybulletEnvironment
 from plotting.plotResults import *
 from plotting.plotThesis import *
@@ -29,9 +31,30 @@ import system.helper as helper
 import time
 
 #####Testing Ground For Python-start
+#names=["D*Lite","GridCell","CoordinateSystem"]
+#time_consumptions = []
+#plot_Time_Comparison()
+
+#CUDA D*Lite Simple
+Experiment_Time=[772.56,9.29,18.77]
+Experiemnt_Trag=[13.72,20.5,16.41]
+
+Door1_Time = [1218.70,3.74,10.30]
+Door1_Trag = [22.31,13.9,25.46]
+
+Door2_Time = [1141.11,5.72,9.69]
+Door2_Trag = [22.31,13.5, 21.79]
+
+Door3_Time = []
+Door3_Trag = []
+
+Door4_Time = []
+Door4_Trag = []
+
+Door5_Time = []
+Door5_Trag = []
 
 
-generate = False
 
 """
 randomized_init=False
@@ -66,33 +89,36 @@ if use_CUDA:
 else:
     print("the Linear Module takes: ", end_timer-start_timer, " seconds")
 """
+generate = False
 
-D_Star_Lite = True
+D_Star_Lite = False
 
 if D_Star_Lite:
     start_timer = time.time()
-    test = Test(ground_truth_env="plane_doors", prior_knowledge_env= "plane", interactive=True,scale=0.7, view_range=7)
+    test = Test(ground_truth_env="plane_unstructured_doors", prior_knowledge_env= "plane_unstructured", interactive=False,scale=0.5, view_range=3)
     nr_step = test.play()
     end_timer=time.time()
     print("D* Lite used ", end_timer-start_timer, " seconds in total")
     print("The path length of D* Lite is: ", nr_step/10)
 
+    plot_step_time(test.step_time_recorder)
+
 
 #####Testing Ground For Python-end
 randomized_init = False
-trag_coding = "Full_Exploration"
+trag_coding = "Thesis"
 ### changes by Haoyang Sun- Start
 print(helper.timer4LinearLookAhead)
 ### changes by Haoyang Sun- End
 
 mpl.rcParams['animation.ffmpeg_path'] = "ffmpeg/ffmpeg"
 
-SIMPLE = True
+SIMPLE = False
 Conventional = None
 
 visualize = False
 from_data = True
-use_CUDA = False
+use_CUDA = True
 bc_enabled =False
 nr_steps = 8000#15000  # 8000 for decoder test, 15000 for maze exploration, 8000 for maze navigation
 #nr_steps_exploration = nr_steps  # 3500 for decoder test, nr_steps for maze exploration, 0 for maze navigation
@@ -102,9 +128,9 @@ construct_new_cognitive_map = False
 
 conventional = False
 
-goal_idx = 26
+goal_idx = 27
 
-env_coding = "plane"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
+env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
             # "plane" for default, "plane_doors", "plane_doors_individual"
             #
@@ -112,10 +138,10 @@ center_block = False
 
 if generate:
     from_data=False
-    nr_steps=15000
+    nr_steps=18000
     nr_steps_exploration=nr_steps
     construct_new_cognitive_map=True
-    goal_idx = 50
+    goal_idx = 70
     env_coding = "plane"
 
 
@@ -250,12 +276,15 @@ else:
     ###changed by Haoyang Sun--Start
     endTimer = time.time()
     totalTimer = (endTimer - startTimer)
+
     print("the total running time is:")
     print(totalTimer)
     print("linear look ahead takes:")
     print(helper.timer4LinearLookAhead)
     print("linear look ahead takes up(%):")
     print((helper.timer4LinearLookAhead*100/totalTimer))
+
+    plot_step_time(model.step_time_record)
     ###changed by Haoyang Sun--End
 
     # Finished simulation

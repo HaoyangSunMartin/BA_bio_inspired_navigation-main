@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 from system.controller.explorationPhase import compute_exploration_goal_vector
 from system.controller.navigationPhase import compute_navigation_goal_vector
@@ -34,6 +36,7 @@ class Bio_Model:
         self.anim =None
         self.start_timer=None
         self.end_timer=None
+        self.step_time_record=[]
 
 
     def animation_frame(self, frame):
@@ -51,7 +54,7 @@ class Bio_Model:
         for i in range(start, end):
 
             # perform one simulation step
-
+            step_timer_start=time.time()
             # compute goal vector
             exploration_phase = True if i < self.nr_steps_exploration else False
             # compute the goal_vector from rodent to goal in global coordinate system
@@ -86,7 +89,7 @@ class Bio_Model:
                 self.gc_network.set_current_as_target_state()
 
             # update the PC map
-            [firing_values, created_new_pc, PC_idx] = self.pc_network.track_movement(self.gc_network.gc_modules,
+            [firing_values, created_new_pc, PC_idx, neighbouring_PC] = self.pc_network.track_movement(self.gc_network.gc_modules,
                                                                                 reward_first_found,
                                                                                 generate_new_PC=self.construct_new_cognitive_map)
 
@@ -105,6 +108,9 @@ class Bio_Model:
             ###changes by Haoyang Sun - start
             if len(self.env.visited_PCs) == 0 or self.env.visited_PCs[-1] != PC_idx:
                 self.env.visited_PCs.append(PC_idx)
+                for neigh in neighbouring_PC:
+                    if neigh not in self.env.visited_PCs:
+                        self.env.visited_PCs.append(neigh)
                 print("the visited PCs are: ", self.env.visited_PCs)
 
             ###changes by Haoyang Sun - end
@@ -121,6 +127,8 @@ class Bio_Model:
                 progress_str = "Progress: " + str(int(i * 100 / self.nr_steps)) + "%"
                 print(progress_str)
                 # plotCurrentAndTarget(gc_network.gc_modules)
+            step_timer_end = time.time()
+            self.step_time_record.append(step_timer_end-step_timer_start)
 
         # simulated steps until next frame
         if self.video:

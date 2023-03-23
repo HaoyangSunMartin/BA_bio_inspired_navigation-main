@@ -32,18 +32,51 @@ def get_environment(env="plane_doors", scale = 1):
         "plane_doors_3" : [1, 3, 7],
         "plane_doors_4" : [1, 3, 5],
         "plane_doors_5c_3o" : [1, 3, 7, 9],
-        "plane" : [ ]
+        "plane_doors_5c_2o" : [1,5,7,9],
+        "plane" : [ ],
+        "plane_unstructured_doors": [1, 3, 5, 7],
+        "plane_unstructured" : [],
+        "plane_undiscovered_blank": [],
+        "plane_undiscovered_block": []
     }
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
-    for x in doors:
-        base_coor = [int(x*10*scale),int(54*scale)]
+    if env == "plane_unstructured" or env == "plane_unstructured_doors":
+        unstructured=True
+        triangel_y = [4.0, 4.5, 4.0, 3.0, 4.0, 5.0]
+        box_y = [8, 8.5, 7.5, 7.5, 8.5]
+        triangel_y = [4.0, 4.5, 4.0, 3.0, 4.0, 5.0]
+        box_y = [8, 8.5, 7.5, 7.5, 8.5]
+        door_y = [4.4,4.4,4.4,4.4,4.4]
+    else:
+        triangel_y = [5, 5, 5, 5, 5, 5]
+        box_y = [8, 8, 8, 8, 8]
+        door_y = [5.4,5.4,5.4,5.4,5.4]
+
+
+
+
+    for id, x in enumerate(doors):
+        base_coor = [int(x*10*scale),int(door_y[id]*10*scale)]
         rec = [int(10*scale),int(2*scale)]
         for i in range(base_coor[0],base_coor[0]+rec[0]):
             for ii in range(base_coor[1], base_coor[1] + rec[1]):
                 grid[ii][i] = OBSTACLE#grid[109-ii][i] = OBSTACLE
     boxes = [0, 2, 4, 6, 8, 10]
-    for x in boxes:
-        base_coor = [int(x*10*scale),int(50*scale)]
+    if env == "plane_undiscovered_blank":  # the area of the first door is set as blank
+        boxes = [-1,2,4,6,8,10] # -1 is a place holder
+    elif env == "plane_undiscovered_block":  # the first door of  the first door is set as all obstacles
+        boxes = [-1,2,4,6,8,10]
+        #the undiscovered area is set as obstacles
+        for i in range(0,(10+10+5)*scale):
+            for ii in range(0, (50+20)*scale):
+                grid[ii][i] = OBSTACLE
+    else:
+        boxes=boxes
+
+    for id, x in enumerate(boxes):
+        if x == -1:
+            continue
+        base_coor = [int(x*10*scale),int(triangel_y[id]*10*scale)]
         rec = [int(10*scale),int(20*scale)]
         for i in range(base_coor[0],base_coor[0]+rec[0]):
             for ii in range(base_coor[1], base_coor[1]+rec[1]):
@@ -51,8 +84,8 @@ def get_environment(env="plane_doors", scale = 1):
 
 
     boxes = [1, 3, 5, 7, 9]
-    for x in boxes:
-        base_coor = [int(x*10*scale), int(80*scale)]
+    for id, x in enumerate(boxes):
+        base_coor = [int(x*10*scale), int(box_y[id]*10*scale)]
         rec = [int(10*scale), int(10*scale)]
         for i in range(base_coor[0],base_coor[0]+rec[0]+1):
             for ii in range(base_coor[1], base_coor[1] + rec[1] + 1):

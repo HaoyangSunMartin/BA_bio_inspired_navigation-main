@@ -104,7 +104,7 @@ def plot_grid_cell_modules(gc_modules, i, plot_target=False, plot_matches=False)
 
     plt.savefig("experiments/grid_cell_initialization/" + folder + "grid_cell_initialization_" + str(i), format="pdf")
 
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -142,7 +142,7 @@ def plot_3D_sheets(gc_modules, i ):
         os.makedirs(directory)
 
     plt.savefig("experiments/grid_cell_initialization/" + "grid_cell_initialization_3D_" + str(i), format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -217,7 +217,7 @@ def plot_vector_navigation_error(error):
     plt.xlabel("Absolute error between actual position and estimated position [m]")
     plt.ylabel("Relative frequency")
     plt.savefig("experiments/" + "errors", format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -237,7 +237,7 @@ def plot_vector_angle_error(positions, vectors):
     plt.xlabel("Absolute error in decoded vector angle [°]")
     plt.ylabel("Relative frequency")
     plt.savefig("experiments/" + "errors_angle", format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -257,7 +257,7 @@ def plot_vector_distance_error(positions, vectors):
     plt.xlabel("Absolute error in decoded vector distance [m]")
     plt.ylabel("Relative frequency")
     plt.savefig("experiments/" + "errors_distance", format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -279,7 +279,7 @@ def plot_positions(positions, vectors):
     # plt.xlim(-1, 1)
     # plt.ylim(-1, 1)
     plt.savefig("experiments/" + "vectors", format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
 
@@ -289,7 +289,7 @@ def plot_error_single_run(positions, vectors):
     errors = np.linalg.norm(positions[3501:] + vectors[3501:], axis=1)
 
     plt.plot(errors)
-    plt.show()
+    plt.show(block=False)
 
 
 def plot_angles_single_run(positions, vectors):
@@ -306,7 +306,7 @@ def plot_angles_single_run(positions, vectors):
     plt.ylim(-np.pi, np.pi)
 
     plt.legend(["true angle", "computed angle"])
-    plt.show()
+    plt.show(block=False)
 
 
 def plot_distances_single_run(positions, vectors):
@@ -322,7 +322,7 @@ def plot_distances_single_run(positions, vectors):
     plt.xlabel("time-steps in navigation phase")
     plt.ylabel(r"goal vector length $[m]$")
     plt.savefig("experiments/" + "spike_detector_mse_sample_run", format="pdf")
-    plt.show()
+    plt.show(block=False)
 
 
 def plot_mean_squared_error(mse_dict):
@@ -337,7 +337,7 @@ def plot_mean_squared_error(mse_dict):
     plt.ylabel(r"mean squared error of all $\delta$ $[m^2]$")
 
     plt.savefig("experiments/" + "spike_detector_mse", format="pdf")
-    plt.show()
+    plt.show(block=False)
 
 
 # --------------- Plot cognitive map ---------------
@@ -480,6 +480,14 @@ def add_environment(ax, env="plane", center_block=False):
                              ec=TUM_colors['TUMLightGray'], linewidth=5)
     ax.add_artist(plot_box)
 
+def add_goal(ax):
+    circle = plt.Circle((1.5, 10), 0.12,
+                        fc=TUM_colors['TUMBlue'],
+                        ec=TUM_colors['TUMGray'], linewidth=0)
+    ax.add_artist(circle)
+
+
+
 def add_trajectory(ax, xy_coordinates):
     x_values = []
     y_values = []
@@ -488,6 +496,7 @@ def add_trajectory(ax, xy_coordinates):
         y_values.insert(0, y)
 
     ax.plot(x_values, y_values, color=TUM_colors['TUMBlue'], alpha=1.0)
+
 
 
 # --------------- Plot sub goal localization map ---------------
@@ -539,7 +548,7 @@ def plot_sub_goal_localization(env, cognitive_map, pc_network, goal_vector, file
     plt.xlim(-0.5, 11.5)
     plt.ylim(-0.5, 11.5)
     plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 def calculate_trajectory_distance(xy_coordinates):
     distance = 0.0
@@ -629,7 +638,7 @@ def plot_cognitive_map(env, cognitive_map, pc_network, goal_vector, filename,env
     ax = plt.gca()
     add_cognitive_map(ax, pc_network, cognitive_map)
     add_environment(ax,env_coding,center_block=center_block)
-
+    add_goal(ax)
     initial = plt.Circle((5.5, 0.5), 0.12, color=TUM_colors['TUMGray'])
     ax.add_artist(initial)
 
@@ -719,7 +728,7 @@ def plot_trajectory_on_map(xy_coordinates,env, cognitive_map, pc_network, goal_v
     plt.axis('square')
     plt.xlim(-0.5, 11.5)
     plt.ylim(-0.5, 11.5)
-    plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
+    #plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
     plt.show()
     plt.close()
 
@@ -781,7 +790,7 @@ def plot_cognitive_map_with_bc(env, cognitive_map, bc_list, pc_network, goal_vec
     plt.xlim(-0.5, 11.5)
     plt.ylim(-0.5, 11.5)
     plt.savefig("experiments/" + "goal_lookahead" + filename, format="pdf")
-    plt.show()
+    plt.show(block=False)
     plt.close()
 def plot_env_map_with_bc(bc_list,env, center_block=False,env_coding="plane"):
     plt.figure()
@@ -809,6 +818,43 @@ def plot_env_map_with_bc(bc_list,env, center_block=False,env_coding="plane"):
     plt.xlim(-0.5, 11.5)
     plt.ylim(-0.5, 11.5)
 
-    plt.show()
+    plt.show(block=False)
     plt.close()
 
+def plot_step_time(record):
+    names = range(len(record))
+    values = record
+    fig, ax = plt.subplots()
+    ax.set_xlabel("step")
+    ax.set_ylabel("time consumption")
+    plt.bar(names, values)
+    plt.suptitle("Time Consumption of each step")
+    plt.yscale("log")
+    plt.show()
+
+def plot_Time_Comparison(names, record, title=None):
+
+    values = record
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Methods")
+    ax.set_ylabel("Time Consumption (seconds)")
+    plt.bar(names, values)
+    if title is None:
+        plt.suptitle("Time Consumption Comparison")
+    else:
+        plt.suptitle(title)
+    plt.yscale("log")
+    plt.show()
+def plot_Path_Length_Comparison(names, record, title=None):
+
+    values = record
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Methods")
+    ax.set_ylabel("Time Consumption (meters)")
+    plt.bar(names, values)
+    if title is None:
+        plt.suptitle("Path Length Comparison")
+    else:
+        plt.suptitle(title)
+    plt.yscale("log")
+    plt.show()

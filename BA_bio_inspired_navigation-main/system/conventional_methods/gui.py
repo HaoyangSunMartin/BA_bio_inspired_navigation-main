@@ -96,6 +96,7 @@ class NoAnimation:
         temp = 1
 
     def run_game(self, path=None):
+
         if path is None:
             path = []
 
@@ -115,7 +116,7 @@ class NoAnimation:
                 self.set_position((x, y))
 
         #plot the tragectory and the map
-        if self.done: #or self.current_step % 50 == 0:
+        if self.done or (self.current_step % 20 == 0 and self.current_step != 0):
             grid = np.copy(self.world.occupancy_grid_map)
 
             for i in range(grid.shape[0]):
@@ -127,7 +128,9 @@ class NoAnimation:
             cmap = colors.ListedColormap(['White', 'Black', 'Red'])
             plt.figure(figsize=(9, 9))
             plt.pcolor(grid, cmap=cmap, edgecolors='k', linewidths=0)
-            plt.show()
+            plt.show(block=True)
+
+
 
 
 

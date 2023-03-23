@@ -1,12 +1,12 @@
 from system.conventional_methods.gui import Animation, NoAnimation
 from system.conventional_methods.d_star_lite import DStarLite,A_Star
 from system.conventional_methods.grid import OccupancyGridMap, SLAM, get_environment, get_environment2, get_environment3
-
+import time
 
 class Test:
     def __init__(self, ground_truth_env="plane_doors", prior_knowledge_env= "plane", interactive = True, scale=1, view_range=7):
 
-
+        self.step_time_recorder=[]
         self.scale=scale
         view_range = view_range
         #this is the map during that navigation
@@ -59,6 +59,7 @@ class Test:
                     view_range=view_range)
 
     def play(self):
+
         # move and compute path
         path, g, rhs = self.dstar.move_and_replan(robot_position=self.new_position)
         nr_step = 0
@@ -66,6 +67,8 @@ class Test:
             # update the map
             # print(path)
             # drive gui
+
+            step_time_start = time.time()
             self.gui.run_game(path=path)
             nr_step+=1
             self.new_position = self.gui.current
@@ -95,4 +98,7 @@ class Test:
 
                 # d star
                 path, g, rhs = self.dstar.move_and_replan(robot_position=self.new_position)
+            step_time_end=time.time()
+            self.step_time_recorder.append(step_time_end-step_time_start)
+
         return nr_step

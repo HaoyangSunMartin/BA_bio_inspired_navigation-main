@@ -8,6 +8,8 @@ from plotting.plotThesis import plot_sub_goal_localization
 def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=False, plotting=False, goal_pc_idx=None):
     """Performs a linear lookahead to find an offset in grid cell spiking in either x or y direction."""
 
+    #return [-4.0, 10.5]
+
     CUDA = gc_network.CUDA
     if CUDA:
         gc_network.prepare_virtual()
@@ -20,13 +22,6 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
     if gc_network.gc_modules[0].CUDA:
         gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
 
-    ###delete this
-    current_pos = env.xy_coordinates[-1]
-
-    max_reward = 0.0
-    max_reward_pos = None
-    goal_PC_pos = None
-    ###
 
 
     dt = gc_network.dt * 2  # checks spiking only every nth step
@@ -110,9 +105,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
                 print("BREAK!, current step: ",i," Current Goal Spiking",goal_spiking)
                 break
             gc_network.track_movement(xy_speed, virtual=True, dt_alternative=dt)  # track virtual movement
-            ###delete this
-            current_pos = current_pos + xy_speed*dt
-            ###
+
             # if i % 20 == 0:
             #     print_str = "Lookahead progress| Direction " + str(idx) + "/4 " \
             #                 "| time-step " + str(i) + "/" + str(max_nr_steps) + \
@@ -157,6 +150,7 @@ def perform_look_ahead_2x(gc_network, pc_network, cognitive_map, env, video=Fals
 
 def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
     """Performs a linear lookahead in a preset direction"""
+
     #gc_network.prepare_virtual()
     if not gc_network.gc_modules[0].CUDA:
         gc_network.reset_s_virtual()  # Resets virtual gc spiking to actual spiking
@@ -172,7 +166,7 @@ def perform_lookahead_directed(gc_network, pc_network, cognitive_map, env):
 
 
     # this defines the horizon factor of LLA
-    horizon = 1.1  # 1.1 for Tim Engelmann's method
+    horizon = 0.6  # 1.1 for Tim Engelmann's method
     max_distance = horizon * env.arena_size  # after this distance lookahead is aborted
     ###changes by Haoyang Sun - end
     max_nr_steps = int(max_distance / (speed * dt))

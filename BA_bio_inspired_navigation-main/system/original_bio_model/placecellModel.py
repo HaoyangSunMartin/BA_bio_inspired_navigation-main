@@ -4,6 +4,7 @@ import numpy as np
 from system.helper import *
 from numba import jit
 
+FIRING_THRESHOLD = 0.85
 
 class PlaceCell:
     """Class to keep track of an individual Place Cell"""
@@ -219,13 +220,17 @@ class PlaceCellNetwork:
 
         firing_values = self.compute_firing_values(gc_modules)
         if len(firing_values) == 0:
-            return -1
+            return -1, []
         max_firing = max(firing_values)
         idx = firing_values.index(max_firing)
-        if max_firing < 0.85:
-            return -1
+        neighbours= []
+        for id, i in enumerate(firing_values):
+            if i > FIRING_THRESHOLD*0.9:
+                neighbours.append(id)
+        if max_firing < FIRING_THRESHOLD:
+            return -1, []
         else:
-            return idx
+            return idx, neighbours
     ###changes by Haoyang Sun - end
 
 
@@ -236,9 +241,10 @@ class PlaceCellNetwork:
 
         created_new_pc = False
         ###changes by Haoyang Sun - start
-        current_PC = self.check_current_PC(gc_modules)
+        current_PC, PC_Neighbours = self.check_current_PC(gc_modules)
+
         if generate_new_PC == False:
-            return [firing_values, False, current_PC]
+            return [firing_values, False, current_PC, PC_Neighbours]
         ###changes by Haoyang Sun - end
 
         #if len(firing_values) == 0 or np.max(firing_values) < 0.85 or reward_first_found:
@@ -257,7 +263,8 @@ class PlaceCellNetwork:
             current_PC = len(self.place_cells) - 1
         ###changes by Haoyang Sun - end
 
-        return [firing_values, created_new_pc, current_PC]
+
+        return [firing_values, created_new_pc, current_PC, PC_Neighbours]
 
 
     def compute_firing_values(self, gc_modules, virtual=False, axis=None, plot=False):

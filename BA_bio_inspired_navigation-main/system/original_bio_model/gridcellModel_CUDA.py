@@ -436,7 +436,7 @@ class GridCellNetwork_CUDA:
                 self.tuned_vector.append(direction)
                 print("Created GC module with gm", gc.gm, " tuned to the direction ", direction )
 
-            nr_steps_init = 10000
+            nr_steps_init = 2000
             self.initialize_network(nr_steps_init, "s_vectors_initialized.npy")
             self.save_gc_model()
 
@@ -485,7 +485,7 @@ class GridCellNetwork_CUDA:
             self.track_movement(xy_speed)
         print("Finished Initialization of nr_steps:", nr_steps)
         #plot_grid_cell_modules(self.gc_modules, nr_steps)
-        #plot_3D_sheets(self.gc_modules, nr_steps)
+        plot_3D_sheets(self.gc_modules, nr_steps)
 
         self.save_gc_spiking(filename)
 
