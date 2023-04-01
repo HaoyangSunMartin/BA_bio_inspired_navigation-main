@@ -445,7 +445,8 @@ def add_environment(ax, env="plane", center_block=False):
         "plane_doors_5c_3o" : [1, 3, 7, 9],
         "plane": [],
         "plane_unstructured": [],
-        "plane_doors_huge": []
+        "plane_doors_huge": [],
+        "plane_doors_Scale_2": []
     }
     if center_block:
         plot_box = plt.Rectangle((2,2.5 ), 8, 1, color=TUM_colors['TUMLightGray'])
@@ -856,5 +857,31 @@ def plot_Path_Length_Comparison(names, record, title=None):
         plt.suptitle("Path Length Comparison")
     else:
         plt.suptitle(title)
+    plt.yscale("log")
+    plt.show()
+
+def plot_step_timer_counter(record):
+    names = ["0-0.01","0.01-0.1", "0.1-1","1-10", "10-100","100+"]
+    count = [0,0,0,0,0,0]
+    for i in record:
+        if i<0.01:
+            count[0]+=1
+        elif i<0.1:
+            count[1]+=1
+        elif i< 1:
+            count[2]+=1
+        elif i < 10:
+            count[3]+=1
+        elif i < 100:
+            count[4]+=1
+        else:
+            count[5]+=0
+    print(names)
+    print(count)
+
+    plt.bar(names, count)
+    plt.suptitle("Step Timer Distribution")
+    plt.xlabel("step time(seconds)")
+    plt.ylabel("number of steps")
     plt.yscale("log")
     plt.show()

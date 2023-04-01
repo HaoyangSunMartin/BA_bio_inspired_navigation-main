@@ -33,11 +33,12 @@ def get_environment(env="plane_doors", scale = 1):
         "plane_doors_4" : [1, 3, 5],
         "plane_doors_5c_3o" : [1, 3, 7, 9],
         "plane_doors_5c_2o" : [1,5,7,9],
+        "plane_doors_5c_1o":[3,5,7,9],
         "plane" : [ ],
         "plane_unstructured_doors": [1, 3, 5, 7],
         "plane_unstructured" : [],
-        "plane_undiscovered_blank": [],
-        "plane_undiscovered_block": []
+        "plane_undiscovered_blank": [3,5,9],
+        "plane_undiscovered_block": [3,5,9]
     }
     doors = dic[env]#[1, 3, 5, 7]# [1, 3, 5, 7]
     if env == "plane_unstructured" or env == "plane_unstructured_doors":
@@ -67,8 +68,8 @@ def get_environment(env="plane_doors", scale = 1):
     elif env == "plane_undiscovered_block":  # the first door of  the first door is set as all obstacles
         boxes = [-1,2,4,6,8,10]
         #the undiscovered area is set as obstacles
-        for i in range(0,(10+10+5)*scale):
-            for ii in range(0, (50+20)*scale):
+        for i in range(0,int((10+10+5)*scale)):
+            for ii in range(0, int((50+20)*scale)+1):
                 grid[ii][i] = OBSTACLE
     else:
         boxes=boxes

@@ -119,7 +119,7 @@ class Bio_Model:
             self.cognitive_map.track_movement(firing_values, created_new_pc, reward)
             ###changes by Haoyang Sun-start
             ##if the robot has reached the goal, end the simulation
-            if self.goal_idx in self.env.visited_PCs:
+            if self.goal_idx == PC_idx:#in self.env.visited_PCs:
                 break
             ###changes by Haoyang Sun-end
             # plot or print intermediate update in console

@@ -36,23 +36,7 @@ import time
 #plot_Time_Comparison()
 
 #CUDA D*Lite Simple
-Experiment_Time=[772.56,9.29,18.77]
-Experiemnt_Trag=[13.72,20.5,16.41]
 
-Door1_Time = [1218.70,3.74,10.30]
-Door1_Trag = [22.31,13.9,25.46]
-
-Door2_Time = [1141.11,5.72,9.69]
-Door2_Trag = [22.31,13.5, 21.79]
-
-Door3_Time = []
-Door3_Trag = []
-
-Door4_Time = []
-Door4_Trag = []
-
-Door5_Time = []
-Door5_Trag = []
 
 
 
@@ -89,19 +73,21 @@ if use_CUDA:
 else:
     print("the Linear Module takes: ", end_timer-start_timer, " seconds")
 """
-generate = False
+generate =False
 
 D_Star_Lite = False
 
 if D_Star_Lite:
+    D_scale=0.5
     start_timer = time.time()
-    test = Test(ground_truth_env="plane_unstructured_doors", prior_knowledge_env= "plane_unstructured", interactive=False,scale=0.5, view_range=3)
+    test = Test(ground_truth_env="plane_doors_4", prior_knowledge_env= "plane", interactive=False,scale=D_scale, view_range=int(7*D_scale))
     nr_step = test.play()
     end_timer=time.time()
     print("D* Lite used ", end_timer-start_timer, " seconds in total")
-    print("The path length of D* Lite is: ", nr_step/10)
+    print("The path length of D* Lite is: ", nr_step/(10*D_scale))
 
     plot_step_time(test.step_time_recorder)
+    plot_step_timer_counter(test.step_time_recorder)
 
 
 #####Testing Ground For Python-end
@@ -128,7 +114,7 @@ construct_new_cognitive_map = False
 
 conventional = False
 
-goal_idx = 27
+goal_idx = 28
 
 env_coding = "plane_doors"#doors_option = "plane_doors"  # "plane" for default, "plane_doors", "plane_doors_individual"
             #doors_option = "plane_doors"  "plane_doors_1" "plane_doors_2" "plane_doors_3" "plane_doors_4" "plane_doors_5c_3o"
