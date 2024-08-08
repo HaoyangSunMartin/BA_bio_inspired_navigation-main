@@ -1,8 +1,11 @@
 # BA_bio_inspired_navigation
 
-Welcome to the Git Repo for the Bachelor Thesis on
+Welcome to the Git Repo of Haoyang Sun's Bachelor Thesis on\
+> Biologically Inspired Navigation In a Dynamic Environment.
 
-> Biologically Inspired Spatial Navigation using vector-based and topology-based path planning 
+This project uses highly optimized pytorch code to simulate the grid cell signals of a rat's hippocampus on a GPU.
+The code implements the model in the following paper:
+V. Edvardsen. [Long-range navigation by path integration and decoding of grid cells in a neural network](https://doi.org/10.1109/ijcnn.2017.7966406). IEEE, May 2017.
 
 In this file we will cover the installation process to get the code running and touch upon the meaning of the different files.
 For a detailed description of the functionality and thoughts behind this code, please refer to the thesis.
