@@ -75,7 +75,7 @@ Note that some folders are git-ignored but will be created when running the scri
     ├── videos                  # Here it will save the video
     ├── main.py                 # Execute this file for main experiments
     ├── README.md               # You are here. Overview of project
-    └── TUM_BA_...pdf           # Bachelor thesis explaining thoughts and theory behind code
+    └── Biologically_Inspired...pdf           # Bachelor thesis of Haoyang Sun explaining thoughts and theory behind code
 
 ## Questions left?
 Any questions left or having troubles with the code? Feel free to reach out to tim.engelmann@tum.de
